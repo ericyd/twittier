@@ -1,0 +1,23 @@
+[package]
+name = "twitter"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# Name output binary "tw"
+[[bin]]
+bench = false
+path = "src/main.rs"
+name = "tw"
+
+[dependencies]
+toml = "0.5"
+home = "0.5.3"
+serde = { version = "1.0", features = ["derive"] }
+# https://docs.rs/hmac-sha1/0.1.3/hmacsha1/
+hmac-sha1 = "0.1.3"
+# This one looks a little more robust but can't seem to get cargo to find it in crates.io
+# https://docs.rs/hmac-sha1-compact/1.0.0/hmac_sha1_compact/struct.HMAC.html
+# hmac-sha1-compact = "1.0.0"
+# serde_derive = "1.0"
