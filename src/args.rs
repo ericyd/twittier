@@ -13,6 +13,7 @@ struct ArgParser {
     map: HashMap<String, String>,
 }
 
+#[derive(Debug)]
 pub enum Command {
     Help,
     Version,
@@ -55,6 +56,16 @@ impl ArgParser {
         match self.map.get(key) {
             Some(thing) => match thing.parse::<T>() {
                 Ok(val) => val,
+                Err(_err) => default,
+            },
+            None => default,
+        }
+    }
+
+    pub fn get_option<T: FromStr>(&self, key: &str, default: Option<T>) -> Option<T> {
+        match self.map.get(key) {
+            Some(thing) => match thing.parse::<T>() {
+                Ok(val) => Some(val),
                 Err(_err) => default,
             },
             None => default,
@@ -104,9 +115,11 @@ impl Display for ArgParser {
 
 // This struct represents a deserialized set of all possible arguments accepted by the program.
 // I don't really think this is the absolute *best* way to do this but it has some advantages and it might be alright.
+#[derive(Debug)]
 pub struct Args {
     pub command: Command,
     pub credentials_file: String,
+    pub message: Option<String>
 }
 
 impl Args {
@@ -114,14 +127,28 @@ impl Args {
         let args = ArgParser::new();
         println!("{:?}", &args);
         let command = args.command();
+        
         // TODO: should this live in ArgParser?
         let credentials_file = args.get(
             "credentials",
             args.get("c", String::from(".twitter_credentials.toml")),
         );
+
+        let message = args.get_option(
+            "message",
+            args.get_option("m", None)
+        );
+        
         Ok(Args {
             command,
             credentials_file,
+            message
         })
+    }
+}
+
+impl Display for Args {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "Args <command: {:?}, credentials_file: {}, message: {}>", &self.command, &self.credentials_file, self.message.as_ref().unwrap_or(&"None".to_string()))
     }
 }

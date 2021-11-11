@@ -21,6 +21,7 @@ fn main() {
 fn try_main(args: Args) -> Result<(), String> {
     use args::Command::*;
 
+    println!("{:?}", &args);
     match args.command {
         Tweet => {
             println!("Tweet");
