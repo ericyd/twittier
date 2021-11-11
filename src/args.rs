@@ -4,6 +4,7 @@
 // ripgrep has a bunch of custom logic, I feel like this might be required
 // https://github.com/BurntSushi/ripgrep/blob/af54069c51cc3656c9c343a7fb3c9360cfddf505/crates/core/args.rs#L228-L250
 
+use super::error::TwitterError;
 use std::collections::HashMap;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
@@ -52,50 +53,35 @@ impl ArgParser {
         ArgParser { map }
     }
 
-    pub fn get<T: FromStr>(&self, key: &str, default: T) -> T {
-        match self.map.get(key) {
+    pub fn get<T: FromStr>(&self, long_name: &str, short_name: &str, default: T) -> T {
+        match self.map.get(long_name) {
             Some(thing) => match thing.parse::<T>() {
                 Ok(val) => val,
                 Err(_err) => default,
             },
-            None => default,
+            None => match self.map.get(short_name) {
+                Some(thing) => match thing.parse::<T>() {
+                    Ok(val) => val,
+                    Err(_err) => default,
+                },
+                None => default,
+            },
         }
     }
 
-    pub fn get_option<T: FromStr>(&self, key: &str, default: Option<T>) -> Option<T> {
-        match self.map.get(key) {
+    pub fn get_option<T: FromStr>(&self, long_name: &str, short_name: &str) -> Option<T> {
+        match self.map.get(long_name) {
             Some(thing) => match thing.parse::<T>() {
                 Ok(val) => Some(val),
-                Err(_err) => default,
+                Err(_err) => None,
             },
-            None => default,
-        }
-    }
-
-    pub fn command(&self) -> Command {
-        let first_positional_arg_is_help = self.map.get("0") == Some(&String::from("help"));
-        let requested_help_with_no_positional_arg = self.map.get("0").is_none()
-            && (self.map.get("help").is_some() || self.map.get("h").is_some());
-        if first_positional_arg_is_help || requested_help_with_no_positional_arg {
-            return Command::Help;
-        }
-
-        match self.map.get("0") {
-            Some(thing) => match thing.as_str() {
-                "post" => Command::Tweet,
-                "tweet" => Command::Tweet,
-                "help" => Command::Help,
-                "version" => Command::Version,
-                "login" => Command::Login,
-                _ => {
-                    println!("Unknown command: {}", thing);
-                    Command::Help
-                }
+            None => match self.map.get(short_name) {
+                Some(thing) => match thing.parse::<T>() {
+                    Ok(val) => Some(val),
+                    Err(_err) => None,
+                },
+                None => None,
             },
-            None => {
-                println!("No command specified");
-                Command::Help
-            }
         }
     }
 }
@@ -119,36 +105,67 @@ impl Display for ArgParser {
 pub struct Args {
     pub command: Command,
     pub credentials_file: String,
-    pub message: Option<String>
+    pub message: Option<String>,
 }
 
 impl Args {
-    pub fn parse() -> Result<Self, String> {
+    // TODO: Does this really need to be a result? What possible errors could we encounter?
+    pub fn parse() -> Result<Self, TwitterError> {
         let args = ArgParser::new();
         println!("{:?}", &args);
-        let command = args.command();
-        
-        // TODO: should this live in ArgParser?
+        let command = command(&args);
+
         let credentials_file = args.get(
             "credentials",
-            args.get("c", String::from(".twitter_credentials.toml")),
+            "c",
+            String::from(".twitter_credentials.toml"),
         );
 
-        let message = args.get_option(
-            "message",
-            args.get_option("m", None)
-        );
-        
+        let message = args.get_option("message", "m");
+
         Ok(Args {
             command,
             credentials_file,
-            message
+            message,
         })
     }
 }
 
 impl Display for Args {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "Args <command: {:?}, credentials_file: {}, message: {}>", &self.command, &self.credentials_file, self.message.as_ref().unwrap_or(&"None".to_string()))
+        write!(
+            f,
+            "Args <command: {:?}, credentials_file: {}, message: {}>",
+            &self.command,
+            &self.credentials_file,
+            self.message.as_ref().unwrap_or(&"None".to_string())
+        )
+    }
+}
+
+fn command(args: &ArgParser) -> Command {
+    let first_positional_arg_is_help = args.map.get("0") == Some(&String::from("help"));
+    let requested_help_with_no_positional_arg = args.map.get("0").is_none()
+        && (args.map.get("help").is_some() || args.map.get("h").is_some());
+    if first_positional_arg_is_help || requested_help_with_no_positional_arg {
+        return Command::Help;
+    }
+
+    match args.map.get("0") {
+        Some(thing) => match thing.as_str() {
+            "post" => Command::Tweet,
+            "tweet" => Command::Tweet,
+            "help" => Command::Help,
+            "version" => Command::Version,
+            "login" => Command::Login,
+            _ => {
+                println!("Unknown command: {}", thing);
+                Command::Help
+            }
+        },
+        None => {
+            println!("No command specified");
+            Command::Help
+        }
     }
 }
