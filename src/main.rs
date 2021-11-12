@@ -25,25 +25,25 @@ fn main() {
 fn try_main(args: Args) -> Result<(), error::TwitterError> {
     use args::Command::*;
 
-    println!("{:?}", &args);
+    dbg!(&args);
     match args.command {
         Tweet => {
-            println!("Tweet");
+            dbg!("Tweet");
             tweet(&args)
         }
         Version => {
-            println!("Version");
+            dbg!("Version");
             Ok(())
         }
         Login => {
-            println!("Login");
+            dbg!("Login");
             let credentials = get_credentials(&args)?;
-            println!("{}", credentials.access_token);
-            println!("{}", credentials.access_token_secret);
+            dbg!("{}", credentials.access_token);
+            dbg!("{}", credentials.access_token_secret);
             Ok(())
         }
         Help => {
-            println!("Help");
+            dbg!("Help");
             Ok(())
         }
     }

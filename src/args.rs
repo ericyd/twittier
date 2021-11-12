@@ -112,7 +112,7 @@ impl Args {
     // TODO: Does this really need to be a result? What possible errors could we encounter?
     pub fn parse() -> Result<Self, TwitterError> {
         let args = ArgParser::new();
-        println!("{:?}", &args);
+        dbg!(&args);
         let command = command(&args);
 
         let credentials_file = args.get(

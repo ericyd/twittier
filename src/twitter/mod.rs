@@ -34,7 +34,7 @@ impl Twitter {
 
     // https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/post-statuses-update
     pub fn post(&self, message: &str) -> Result<(), Box<dyn std::error::Error>> {
-        println!("Posting message: {}", message);
+        dbg!(format!("Posting message: {}", message));
 
         // Async is obviously the cooler way but I know nothing about Rust Futures and it felt out of scope for this stage. From the reqwest docs:
         // "For applications wishing to only make a few HTTP requests, the reqwest::blocking API may be more convenient."
@@ -45,17 +45,19 @@ impl Twitter {
         let base_url = "https://api.twitter.com/1.1/statuses/update.json";
         let authorization = self.build_auth_header(base_url, message);
 
-        println!("{}", &authorization);
+        dbg!(&authorization);
 
         // returns Result<Response>
         // https://docs.rs/reqwest/0.11.6/reqwest/blocking/struct.Response.html
-        let res = client
-            .post(base_url)
-            .header("Authorization", authorization)
-            .form(&[("status", encode(message))])
-            .send()?;
+        let req = client
+        .post(base_url)
+        .header("Authorization", authorization)
+        .form(&[("status", encode(message))]);
+        dbg!(&req);
 
-        println!("{:#?}", &res);
+        let res = req.send()?;
+
+        dbg!(&res);
 
         // Possible to use match on the enum if desired
         // https://docs.rs/reqwest/0.11.6/reqwest/struct.StatusCode.html#impl-1
@@ -92,9 +94,9 @@ impl Twitter {
         let params = OauthParams {
             base_url: base_url.to_string(),
             oauth_consumer_key: self.credentials.api_key.to_owned(),
-            oauth_nonce: nonce,
+            oauth_nonce: self.credentials.api_key.to_owned(), //nonce,
             oauth_signature_method: "HMAC-SHA1".to_string(),
-            oauth_timestamp: timestamp,
+            oauth_timestamp: "1636753845094".to_string(), //timestamp,
             oauth_token: self.credentials.access_token.to_owned(),
             oauth_version: "1.0".to_string(),
         };
@@ -102,34 +104,32 @@ impl Twitter {
         let signature = self.build_signature(&params, message);
 
         format!(
-            // concat!(
-            //     "OAuth ",
-            //     "oauth_consumer_key=\"{}\",",
-            //     "oauth_nonce=\"{}\",",
-            //     "oauth_signature=\"{}\",",
-            //     "oauth_signature_method=\"HMAC-SHA1\",",
-            //     "oauth_timestamp=\"{}\",",
-            //     "oauth_token=\"{}\",",
-            //     "oauth_version=\"1.0\"",
-            // ),
-
-            // OHH!!!! I got a 401 with this instead of 400!!!!!
-            // That's just bad credentials, that means we're on our way up!!!
             concat!(
                 "OAuth ",
-                "oauth_consumer_key={},",
-                "oauth_nonce={},",
-                "oauth_signature={},",
-                "oauth_signature_method=HMAC-SHA1,",
-                "oauth_timestamp={},",
-                "oauth_token={},",
-                "oauth_version=1.0",
+                "oauth_consumer_key=\"{}\", ",
+                "oauth_nonce=\"{}\", ",
+                "oauth_signature=\"{}\", ",
+                "oauth_signature_method=\"HMAC-SHA1\", ",
+                "oauth_timestamp=\"{}\", ",
+                "oauth_token=\"{}\", ",
+                "oauth_version=\"1.0\"",
             ),
-            params.oauth_consumer_key,
-            params.oauth_nonce,
-            signature,
-            params.oauth_timestamp,
-            params.oauth_token,
+
+            // concat!(
+            //     "OAuth ",
+            //     "oauth_consumer_key={}, ",
+            //     "oauth_nonce={}, ",
+            //     "oauth_signature={}, ",
+            //     "oauth_signature_method=HMAC-SHA1, ",
+            //     "oauth_timestamp={}, ",
+            //     "oauth_token={}, ",
+            //     "oauth_version=1.0",
+            // ),
+            encode(&params.oauth_consumer_key),
+            encode(&params.oauth_nonce),
+            encode(&signature),
+            encode(&params.oauth_timestamp),
+            encode(&params.oauth_token),
         )
     }
 
@@ -170,7 +170,7 @@ impl Twitter {
         );
 
         // I'm confident there is a better way to do this with Serialize or Deserialize but this works for now
-        let string_to_encode = format!(
+        let parameter_string = format!(
             concat!(
                 "oauth_consumer_key={}&",
                 "oauth_nonce={}&",
@@ -180,31 +180,38 @@ impl Twitter {
                 "oauth_version=1.0&",
                 "status={}"
             ),
-            params.oauth_consumer_key,
-            params.oauth_nonce,
-            params.oauth_timestamp,
-            params.oauth_token,
-            message
+            encode(&params.oauth_consumer_key),
+            encode(&params.oauth_nonce),
+            encode(&params.oauth_timestamp),
+            encode(&params.oauth_token),
+            encode(message),
         );
         let encoded = format!(
             "POST&{}&{}",
             encode(&params.base_url),
-            encode(&string_to_encode)
+            encode(&parameter_string)
         );
 
-        println!("encoded: {}", &encoded);
+        dbg!(&encoded);
 
         // https://stackoverflow.com/questions/54619582/hmac-sha1-in-rust
         // TODO: can this be more of a one-liner?
+
         let mut mac = Hmac::new(Sha1::new(), signing_key.as_bytes());
         mac.input(encoded.as_bytes());
         let result = mac.result();
         let code = result.code();
 
-        let signature = base64::encode_config(&code, base64::URL_SAFE);
-        // let signature = base64::encode(&code);
+        // let code = hmac_sha1_compact::HMAC::mac(encoded.as_bytes(), signing_key.as_bytes());
 
-        println!("signature: {}", &signature);
+        // let code = hmacsha1::hmac_sha1(signing_key.as_bytes(), encoded.as_bytes());
+
+
+
+        // let signature = base64::encode_config(&code, base64::URL_SAFE);
+        let signature = base64::encode(&code);
+
+        dbg!(&signature);
 
         signature
 

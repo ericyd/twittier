@@ -6,9 +6,9 @@ use super::twitter::Twitter;
 
 pub fn tweet(args: &Args) -> Result<(), TwitterError> {
     let credentials = get_credentials(args)?;
-    println!("{}", credentials.api_key);
-    println!("{}", credentials.access_token);
-    println!("{}", credentials.access_token_secret);
+    dbg!(&credentials.api_key);
+    dbg!(&credentials.access_token);
+    dbg!(&credentials.access_token_secret);
 
     match &args.message {
         Some(message) if message != "" => {
