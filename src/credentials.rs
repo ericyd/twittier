@@ -7,6 +7,8 @@ use toml::Value;
 
 #[derive(Deserialize)]
 pub struct Credentials {
+    pub api_key: String,
+    pub api_key_secret: String,
     pub access_token: String,
     pub access_token_secret: String,
 }
