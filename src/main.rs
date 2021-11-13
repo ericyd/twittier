@@ -2,15 +2,9 @@ use std::process;
 
 mod args;
 use args::Args;
-
 mod credentials;
-use credentials::get_credentials;
-
-mod tweet;
-use tweet::tweet;
-
 mod error;
-
+mod tweet;
 mod twitter;
 
 fn main() {
@@ -27,24 +21,13 @@ fn try_main(args: Args) -> Result<(), error::TwitterError> {
 
     dbg!(&args);
     match args.command {
-        Tweet => {
-            dbg!("Tweet");
-            tweet(&args)
-        }
-        Version => {
-            dbg!("Version");
-            Ok(())
-        }
+        Tweet => tweet::post(&args),
+        Version => Ok(()),
         Login => {
-            dbg!("Login");
-            let credentials = get_credentials(&args)?;
-            dbg!("{}", credentials.access_token);
-            dbg!("{}", credentials.access_token_secret);
+            let credentials = credentials::get(&args)?;
+            dbg!(credentials);
             Ok(())
         }
-        Help => {
-            dbg!("Help");
-            Ok(())
-        }
+        Help => Ok(()),
     }
 }
