@@ -21,6 +21,25 @@ pub struct TwitterResponse<T> {
     data: T,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct TwitterUser {
+    id: u64,
+    id_str: String,
+    name: String, // display name
+    screen_name: String, // handle
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TwitterFeedItem {
+    created_at: String, // format: "Wed Oct 10 20:19:24 +0000 2018",
+    id: u64,
+    id_str: String, // identical to id, but in String formaat
+    text: String,
+    user: TwitterUser,
+}
+
+type TwitterFeed = Vec<TwitterFeedItem>;
+
 pub struct Twitter {
     credentials: Credentials,
     client: reqwest::blocking::Client,
@@ -73,21 +92,8 @@ impl Twitter {
             let json: TwitterResponse<TwitterCreateResponseData> = res.json()?;
             dbg!(&json);
             Ok(json.data)
-        } else if res.status().is_server_error() {
-            Err(TwitterError::Api(format!(
-                "Server error: {}",
-                &res.status()
-            )))
-        } else if res.status().is_client_error() {
-            Err(TwitterError::Api(format!(
-                "Client error: {}",
-                &res.status()
-            )))
         } else {
-            Err(TwitterError::Api(format!(
-                "Unknown error: {}",
-                &res.status()
-            )))
+            Err(self.error(res))
         }
     }
 
@@ -109,27 +115,42 @@ impl Twitter {
         let res = req.send()?;
         dbg!(&res);
 
-        // Possible to use match on the enum if desired
-        // https://docs.rs/reqwest/0.11.6/reqwest/struct.StatusCode.html#impl-1
         if res.status().is_success() {
             let json: TwitterResponse<TwitterDeleteResponseData> = res.json()?;
             dbg!(&json);
             Ok(json.data)
-        } else if res.status().is_server_error() {
-            Err(TwitterError::Api(format!(
-                "Server error: {}",
-                &res.status()
-            )))
-        } else if res.status().is_client_error() {
-            Err(TwitterError::Api(format!(
-                "Client error: {}",
-                &res.status()
-            )))
         } else {
-            Err(TwitterError::Api(format!(
-                "Unknown error: {}",
-                &res.status()
-            )))
+            Err(self.error(res))
+        }
+    }
+
+    // https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/get-statuses-home_timeline
+    // https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/guides/working-with-timelines
+    pub fn feed(&self, count: i32) -> Result<(), TwitterError> {
+        dbg!(format!("Fetching feed with count: {}", count));
+
+        // UGH... to have query params, I will need to send them in too build_authorization separately from the base_url, then re-encode it here...
+        // might need to use a custom struct for feed args, too keep this from getting too wild.
+        let base_url = "https://api.twitter.com/1.1/statuses/home_timeline.json";
+        let authorization = self.build_authorization("GET", base_url);
+
+        // returns Result<Response>
+        // https://docs.rs/reqwest/0.11.6/reqwest/blocking/struct.Response.html
+        let req = self
+            .client
+            .get(base_url)
+            .header("Authorization", authorization);
+        dbg!(&req);
+
+        let res = req.send()?;
+        dbg!(&res);
+
+        if res.status().is_success() {
+            let json: TwitterFeed = res.json()?;
+            dbg!(&json);
+            Ok(())
+        } else {
+            Err(self.error(res))
         }
     }
 
@@ -228,5 +249,26 @@ impl Twitter {
             encode(&params.oauth_timestamp),
             encode(&params.oauth_token),
         )
+    }
+
+    // Possible to use match on the enum if desired
+    // https://docs.rs/reqwest/0.11.6/reqwest/struct.StatusCode.html#impl-1
+    fn error(&self, res: reqwest::blocking::Response) -> TwitterError {
+        if res.status().is_server_error() {
+            TwitterError::Api(format!(
+                "Server error: {}",
+                &res.status()
+            ))
+        } else if res.status().is_client_error() {
+            TwitterError::Api(format!(
+                "Client error: {}",
+                &res.status()
+            ))
+        } else {
+            TwitterError::Api(format!(
+                "Unknown error: {}",
+                &res.status()
+            ))
+        }
     }
 }

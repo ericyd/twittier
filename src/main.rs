@@ -14,6 +14,7 @@ enum Command {
     Version,
     Tweet,
     Delete,
+    Feed,
     Init,
 }
 
@@ -31,6 +32,7 @@ fn try_main(args: BaseArgs) -> Result<(), error::TwitterError> {
     match command(&args) {
         Command::Tweet => commands::post(&args),
         Command::Delete => commands::delete(&args),
+        Command::Feed => commands::feed(&args),
         Command::Version => {
             println!("Twitter CLI 🐤 v0.1.0");
             Ok(())
@@ -51,6 +53,7 @@ fn command(args: &BaseArgs) -> Command {
             "p" => Command::Tweet,
             "tweet" => Command::Tweet,
             "delete" => Command::Delete,
+            "feed" => Command::Feed,
             "init" => Command::Init,
             "help" => Command::Help,
             "version" => Command::Version,
