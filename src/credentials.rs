@@ -5,6 +5,24 @@ use std::fs;
 use std::path::PathBuf;
 use toml::Value;
 
+struct Args {
+    credentials_file: String,
+    profile: Option<String>,
+}
+
+fn parse(args: &BaseArgs) -> Args {
+    let credentials_file = args.get(
+        "credentials",
+        "c",
+        String::from(".twitter_credentials.toml"),
+    );
+    let profile = args.get_option("profile", "p");
+    Args {
+        credentials_file,
+        profile,
+    }
+}
+
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Credentials {
     pub api_key: String,
@@ -50,18 +68,14 @@ fn is_any_empty(credentials: &Credentials) -> bool {
 }
 
 pub fn get(base_args: &BaseArgs) -> Result<Credentials, TwitterError> {
-    let credentials_file = base_args.get(
-        "credentials",
-        "c",
-        String::from(".twitter_credentials.toml"),
-    );
+    let args = parse(base_args);
     let mut path = PathBuf::from(home_dir());
-    path.push(&credentials_file);
+    path.push(&args.credentials_file);
 
     path = fs::canonicalize(&path)?;
     let contents = fs::read_to_string(&path)?;
 
-    match base_args.get_option::<String>("profile", "p") {
+    match &args.profile {
         Some(profile) => {
             let credentials: Value = toml::from_str(&contents)?;
             let profile_credentials: Credentials = credentials
@@ -77,50 +91,5 @@ pub fn get(base_args: &BaseArgs) -> Result<Credentials, TwitterError> {
             let credentials: CredentialsFile = toml::from_str(&contents)?;
             Ok(credentials.default)
         }
-    }
-}
-
-fn write_empty_credentials(path: &PathBuf) -> Result<(), TwitterError> {
-    let credentials = Credentials {
-        api_key: "".to_string(),
-        api_key_secret: "".to_string(),
-        access_token: "".to_string(),
-        access_token_secret: "".to_string(),
-    };
-    let credentials_file = CredentialsFile {
-        default: credentials,
-    };
-    let contents = toml::to_string(&credentials_file)?;
-    fs::write(path, contents)?;
-    println!(
-        "✅ Credentials file succesfully initialized. Please open {:?} and fill in the values",
-        &path
-    );
-    Ok(())
-}
-
-pub fn init(base_args: &BaseArgs) -> Result<(), TwitterError> {
-    let credentials_file = base_args.get(
-        "credentials",
-        "c",
-        String::from(".twitter_credentials.toml"),
-    );
-    let mut path = PathBuf::from(home_dir());
-    path.push(&credentials_file);
-
-    match fs::canonicalize(&path) {
-        Ok(_) => {
-            let contents = fs::read_to_string(&path)?;
-            if contents != "" {
-                println!(
-                    "🤨 Credentials file ({:?}) already exists and is non-empty!",
-                    &path
-                );
-                Ok(())
-            } else {
-                write_empty_credentials(&path)
-            }
-        }
-        Err(_) => write_empty_credentials(&path),
     }
 }

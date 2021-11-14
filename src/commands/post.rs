@@ -8,16 +8,18 @@ use std::fs::OpenOptions;
 use std::path::PathBuf;
 
 struct Args {
-  message: Option<String>,
+    message: Option<String>,
 }
 
 fn parse(args: &BaseArgs) -> Args {
-  Args { message: args.get_position::<String>(1) }
+    Args {
+        message: args.get_position::<String>(1),
+    }
 }
 
 fn help() -> Result<(), TwitterError> {
-  println!("TODO: document");
-  Ok(())
+    println!("TODO: document");
+    Ok(())
 }
 
 struct TwitterHistoryFile {
@@ -51,7 +53,7 @@ fn append_response_to_history(response: TwitterCreateResponseData) -> Result<(),
 
 pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
     if base_args.is_nth_argument_help(1) {
-      return help();
+        return help();
     }
     let args = parse(&base_args);
     let credentials = credentials::get(base_args)?;

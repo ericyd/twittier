@@ -1,10 +1,10 @@
 use std::process;
 
 mod args;
+mod commands;
 mod credentials;
 mod error;
 mod twitter;
-mod commands;
 
 use args::BaseArgs;
 
@@ -35,7 +35,7 @@ fn try_main(args: BaseArgs) -> Result<(), error::TwitterError> {
             println!("Twitter CLI 🐤 v0.1.0");
             Ok(())
         }
-        Command::Init => credentials::init(&args),
+        Command::Init => commands::init(&args),
         Command::Help => print_help(),
     }
 }
