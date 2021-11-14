@@ -1,13 +1,16 @@
 use std::io::Error as IoError;
 use std::{error::Error, fmt};
-use toml::de::Error as TomlError;
+use toml::de::Error as TomlDeserializeError;
+use toml::ser::Error as TomlSerializeError;
 
 // Allow the use of "{:?}" format specifier
 #[derive(Debug)]
 pub enum TwitterError {
     Io(IoError),
-    Parse(TomlError),
+    Parse(TomlDeserializeError),
+    Serialize(TomlSerializeError),
     MissingArgument(String),
+    ProfileNotFound(String),
 }
 
 // Allow the use of "{}" format specifier
@@ -16,7 +19,11 @@ impl fmt::Display for TwitterError {
         match *self {
             TwitterError::Io(ref cause) => write!(f, "I/O error: {}", cause),
             TwitterError::Parse(ref cause) => write!(f, "Error parsing file: {}", cause),
+            TwitterError::Serialize(ref cause) => write!(f, "Error writing file: {}", cause),
             TwitterError::MissingArgument(ref arg) => write!(f, "Missing argument: {}", arg),
+            TwitterError::ProfileNotFound(ref arg) => {
+                write!(f, "Profile not found in credentials file: {}", arg)
+            }
         }
     }
 }
@@ -27,7 +34,8 @@ impl Error for TwitterError {
         match *self {
             TwitterError::Io(ref cause) => Some(cause),
             TwitterError::Parse(ref cause) => Some(cause),
-            TwitterError::MissingArgument(_) => None,
+            TwitterError::Serialize(ref cause) => Some(cause),
+            _ => None,
         }
     }
 }
@@ -40,9 +48,15 @@ impl From<IoError> for TwitterError {
     }
 }
 
-impl From<TomlError> for TwitterError {
-    fn from(cause: TomlError) -> TwitterError {
+impl From<TomlDeserializeError> for TwitterError {
+    fn from(cause: TomlDeserializeError) -> TwitterError {
         TwitterError::Parse(cause)
+    }
+}
+
+impl From<TomlSerializeError> for TwitterError {
+    fn from(cause: TomlSerializeError) -> TwitterError {
+        TwitterError::Serialize(cause)
     }
 }
 

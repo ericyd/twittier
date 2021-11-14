@@ -28,6 +28,7 @@ fn try_main(args: Args) -> Result<(), error::TwitterError> {
             dbg!(credentials);
             Ok(())
         }
+        Init => credentials::init(&args),
         Help => Ok(()),
     }
 }

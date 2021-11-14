@@ -20,6 +20,7 @@ pub enum Command {
     Version,
     Tweet,
     Login,
+    Init,
 }
 
 // simple argument collector
@@ -106,6 +107,7 @@ pub struct Args {
     pub command: Command,
     pub credentials_file: String,
     pub message: Option<String>,
+    pub profile: Option<String>,
 }
 
 impl Args {
@@ -123,10 +125,13 @@ impl Args {
 
         let message = args.get_option("message", "m");
 
+        let profile = args.get_option("profile", "p");
+
         Ok(Args {
             command,
             credentials_file,
             message,
+            profile,
         })
     }
 }
@@ -155,6 +160,7 @@ fn command(args: &ArgParser) -> Command {
         Some(thing) => match thing.as_str() {
             "post" => Command::Tweet,
             "tweet" => Command::Tweet,
+            "init" => Command::Init,
             "help" => Command::Help,
             "version" => Command::Version,
             "login" => Command::Login,
