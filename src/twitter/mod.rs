@@ -1,32 +1,29 @@
-use super::credentials::Credentials;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 use urlencoding::encode;
+use super::credentials::Credentials;
+use super::error::TwitterError;
 
-// TODO: add more fields: https://developer.twitter.com/en/docs/twitter-api/v1/tweets/post-and-engage/api-reference/post-statuses-update#example-response
-
-/*
-{
-  "data": {
-    "id": "1459618689611935745",
-    "text": "testing"
-  }
-}
-*/
-#[derive(Deserialize, Debug)]
-struct TwitterResponseData {
-    id: String,
-    text: String,
+#[derive(Deserialize, Serialize, Debug)]
+pub struct TwitterCreateResponseData {
+    pub id: String,
+    pub text: String,
 }
 
 #[derive(Deserialize, Debug)]
-struct TwitterResponse {
-    data: TwitterResponseData,
+pub struct TwitterDeleteResponseData {
+    pub deleted: bool
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TwitterResponse<T> {
+    data: T,
 }
 
 pub struct Twitter {
     credentials: Credentials,
+    client: reqwest::blocking::Client,
 }
 
 struct OauthParams {
@@ -38,21 +35,82 @@ struct OauthParams {
 
 impl Twitter {
     pub fn new(credentials: Credentials) -> Twitter {
-        Twitter { credentials }
-    }
-
-    pub fn post_v2(&self, message: &str) -> Result<(), Box<dyn std::error::Error>> {
-        dbg!(format!("Posting message: {}", message));
-
         // Async is obviously the cooler way but I know nothing about Rust Futures and it felt out of scope for this stage. From the reqwest docs:
         // "For applications wishing to only make a few HTTP requests, the reqwest::blocking API may be more convenient."
         // https://docs.rs/reqwest/0.11.6/reqwest/blocking/index.html
         let client = reqwest::blocking::Client::new();
+        Twitter { credentials, client }
+    }
 
-        // omitting ?include_entities=true for now to ensure I can get signing to work before adding extra params
-        // let base_url = "http://localhost:8080/2/tweets";
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
+    pub fn post_v2(&self, message: &str) -> Result<TwitterCreateResponseData, TwitterError> {
+        dbg!(format!("Posting message: {}", message));
+
         let base_url = "https://api.twitter.com/2/tweets";
+        let authorization = self.build_authorization("POST", &base_url);
 
+        let mut body = HashMap::new();
+        body.insert("text", message);
+
+        // returns Result<Response>
+        // https://docs.rs/reqwest/0.11.6/reqwest/blocking/struct.Response.html
+        let req = self.client
+            .post(base_url)
+            .header("Authorization", authorization)
+            .json(&body);
+        dbg!(&req);
+
+        let res = req.send()?;
+        dbg!(&res);
+
+        // Possible to use match on the enum if desired
+        // https://docs.rs/reqwest/0.11.6/reqwest/struct.StatusCode.html#impl-1
+        if res.status().is_success() {
+            let json: TwitterResponse<TwitterCreateResponseData> = res.json()?;
+            dbg!(&json);
+            Ok(json.data)
+        } else if res.status().is_server_error() {
+            Err(TwitterError::Api(format!("Server error: {}", &res.status())))
+        } else if res.status().is_client_error() {
+            Err(TwitterError::Api(format!("Client error: {}", &res.status())))
+        } else {
+            Err(TwitterError::Api(format!("Unknown error: {}", &res.status())))
+        }
+    }
+
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/delete-tweets-id
+    pub fn delete_v2(&self, id: &str) -> Result<TwitterDeleteResponseData, TwitterError> {
+        dbg!(format!("Deleting id: {}", id));
+
+        let base_url = format!("https://api.twitter.com/2/tweets/{}", id);
+        let authorization = self.build_authorization("DELETE", &base_url);
+
+        // returns Result<Response>
+        // https://docs.rs/reqwest/0.11.6/reqwest/blocking/struct.Response.html
+        let req = self.client
+            .delete(&base_url)
+            .header("Authorization", authorization);
+        dbg!(&req);
+
+        let res = req.send()?;
+        dbg!(&res);
+
+        // Possible to use match on the enum if desired
+        // https://docs.rs/reqwest/0.11.6/reqwest/struct.StatusCode.html#impl-1
+        if res.status().is_success() {
+            let json: TwitterResponse<TwitterDeleteResponseData> = res.json()?;
+            dbg!(&json);
+            Ok(json.data)
+        } else if res.status().is_server_error() {
+            Err(TwitterError::Api(format!("Server error: {}", &res.status())))
+        } else if res.status().is_client_error() {
+            Err(TwitterError::Api(format!("Client error: {}", &res.status())))
+        } else {
+            Err(TwitterError::Api(format!("Unknown error: {}", &res.status())))
+        }
+    }
+
+    fn build_authorization(&self, method: &str, base_url: &str) -> String {
         let params = OauthParams {
             oauth_consumer_key: self.credentials.api_key.to_owned(),
             oauth_nonce: self.nonce(),
@@ -65,8 +123,8 @@ impl Twitter {
         // https://developer.twitter.com/en/docs/authentication/oauth-1-0a/creating-a-signature
         let encoded_request = format!(
             "{}&{}&{}",
-            "POST",
-            encode(&base_url),
+            method,
+            encode(base_url),
             encode(&self.parameter_string(&params))
         );
         let hashed_request = self.hash(&self.signing_key(), &encoded_request);
@@ -74,45 +132,7 @@ impl Twitter {
 
         let authorization = self.authorization(&params, &oath_signature);
         dbg!(&authorization);
-
-        let mut body = HashMap::new();
-        body.insert("text", message);
-
-        // returns Result<Response>
-        // https://docs.rs/reqwest/0.11.6/reqwest/blocking/struct.Response.html
-        let req = client
-            .post(base_url)
-            .header("Authorization", authorization)
-            .json(&body);
-        dbg!(&req);
-
-        let res = req.send()?;
-        dbg!(&res);
-
-        // Possible to use match on the enum if desired
-        // https://docs.rs/reqwest/0.11.6/reqwest/struct.StatusCode.html#impl-1
-        if res.status().is_success() {
-            println!("success!");
-
-            let json: TwitterResponse = res.json()?;
-            dbg!(json);
-            /*
-            json = TwitterResponse {
-                data: TwitterResponseData {
-                    id: "1459623297629532163",
-                    text: "if you happen to be looking at my feed in real time then this is a test",
-                },
-            }
-            */
-        } else if res.status().is_server_error() {
-            println!("server error!");
-        } else if res.status().is_client_error() {
-            println!("bad credentials");
-        } else {
-            println!("Something else happened. Status: {:?}", &res.status());
-        }
-
-        Ok(())
+        authorization
     }
 
     // This is obviously a very fake nonce but it should be fine I think
@@ -136,9 +156,7 @@ impl Twitter {
     }
 
     fn hash(&self, key: &str, input: &str) -> [u8; 20] {
-        /*
-        This lib looks a little jank but it works and its tiny https://docs.rs/hmac-sha1/0.1.3/hmacsha1/
-        */
+        // This lib looks a little jank but it works and its tiny https://docs.rs/hmac-sha1/0.1.3/hmacsha1/
         hmacsha1::hmac_sha1(key.as_bytes(), input.as_bytes())
     }
 

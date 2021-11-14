@@ -19,6 +19,7 @@ pub enum Command {
     Help,
     Version,
     Tweet,
+    Delete,
     Login,
     Init,
 }
@@ -32,6 +33,8 @@ impl ArgParser {
         let mut position = 0;
         let mut map = HashMap::new();
 
+        // TODO: handle flag arguments
+        //      - if the next argument is a flag, or if it's the last argument, then assume it's a flag and set value to true
         while i < args.len() {
             let arg = &args[i];
             if arg.starts_with("--") {
@@ -104,6 +107,7 @@ impl Display for ArgParser {
 // I don't really think this is the absolute *best* way to do this but it has some advantages and it might be alright.
 #[derive(Debug)]
 pub struct Args {
+    pub raw: HashMap<String, String>,
     pub command: Command,
     pub credentials_file: String,
     pub message: Option<String>,
@@ -128,6 +132,7 @@ impl Args {
         let profile = args.get_option("profile", "p");
 
         Ok(Args {
+            raw: args.map,
             command,
             credentials_file,
             message,
@@ -160,6 +165,7 @@ fn command(args: &ArgParser) -> Command {
         Some(thing) => match thing.as_str() {
             "post" => Command::Tweet,
             "tweet" => Command::Tweet,
+            "delete" => Command::Delete,
             "init" => Command::Init,
             "help" => Command::Help,
             "version" => Command::Version,

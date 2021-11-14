@@ -17,7 +17,6 @@ impl From<&Value> for Credentials {
     fn from(value: &Value) -> Credentials {
         match value {
             Value::Table(fields) => {
-                dbg!(&fields);
                 Credentials {
                     api_key: fields["api_key"].as_str().unwrap_or("").to_string(),
                     api_key_secret: fields["api_key_secret"].as_str().unwrap_or("").to_string(),
@@ -66,7 +65,7 @@ pub fn get(args: &Args) -> Result<Credentials, TwitterError> {
                 .get(&profile)
                 .ok_or(TwitterError::ProfileNotFound(profile.to_string()))?
                 .into();
-            if (is_any_empty(&profile_credentials)) {
+            if is_any_empty(&profile_credentials) {
                 panic!("Profile {} has empty fields! Please ensure all values are present and non-empty", profile);
             }
             Ok(profile_credentials)
@@ -104,7 +103,7 @@ pub fn init(args: &Args) -> Result<(), TwitterError> {
     match fs::canonicalize(&path) {
         Ok(_) => {
             let contents = fs::read_to_string(&path)?;
-            if (contents != "") {
+            if contents != "" {
                 println!(
                     "🤨 Credentials file ({:?}) already exists and is non-empty!",
                     &path

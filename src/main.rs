@@ -22,6 +22,7 @@ fn try_main(args: Args) -> Result<(), error::TwitterError> {
     dbg!(&args);
     match args.command {
         Tweet => tweet::post(&args),
+        Delete => tweet::delete(&args),
         Version => Ok(()),
         Login => {
             let credentials = credentials::get(&args)?;

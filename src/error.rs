@@ -11,6 +11,7 @@ pub enum TwitterError {
     Serialize(TomlSerializeError),
     MissingArgument(String),
     ProfileNotFound(String),
+    Api(String),
 }
 
 // Allow the use of "{}" format specifier
@@ -24,6 +25,7 @@ impl fmt::Display for TwitterError {
             TwitterError::ProfileNotFound(ref arg) => {
                 write!(f, "Profile not found in credentials file: {}", arg)
             }
+            TwitterError::Api(ref arg) => write!(f, "Twitter API error: {}", arg),
         }
     }
 }
@@ -60,8 +62,8 @@ impl From<TomlSerializeError> for TwitterError {
     }
 }
 
-impl From<String> for TwitterError {
-    fn from(message: String) -> TwitterError {
-        TwitterError::MissingArgument(message)
+impl From<reqwest::Error> for TwitterError {
+    fn from(message: reqwest::Error) -> TwitterError {
+        TwitterError::Api(message.to_string())
     }
 }
