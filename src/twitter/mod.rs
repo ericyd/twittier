@@ -1,9 +1,9 @@
+use super::credentials::Credentials;
+use super::error::TwitterError;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 use urlencoding::encode;
-use super::credentials::Credentials;
-use super::error::TwitterError;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct TwitterCreateResponseData {
@@ -13,7 +13,7 @@ pub struct TwitterCreateResponseData {
 
 #[derive(Deserialize, Debug)]
 pub struct TwitterDeleteResponseData {
-    pub deleted: bool
+    pub deleted: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -39,7 +39,10 @@ impl Twitter {
         // "For applications wishing to only make a few HTTP requests, the reqwest::blocking API may be more convenient."
         // https://docs.rs/reqwest/0.11.6/reqwest/blocking/index.html
         let client = reqwest::blocking::Client::new();
-        Twitter { credentials, client }
+        Twitter {
+            credentials,
+            client,
+        }
     }
 
     // https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
@@ -54,7 +57,8 @@ impl Twitter {
 
         // returns Result<Response>
         // https://docs.rs/reqwest/0.11.6/reqwest/blocking/struct.Response.html
-        let req = self.client
+        let req = self
+            .client
             .post(base_url)
             .header("Authorization", authorization)
             .json(&body);
@@ -70,11 +74,20 @@ impl Twitter {
             dbg!(&json);
             Ok(json.data)
         } else if res.status().is_server_error() {
-            Err(TwitterError::Api(format!("Server error: {}", &res.status())))
+            Err(TwitterError::Api(format!(
+                "Server error: {}",
+                &res.status()
+            )))
         } else if res.status().is_client_error() {
-            Err(TwitterError::Api(format!("Client error: {}", &res.status())))
+            Err(TwitterError::Api(format!(
+                "Client error: {}",
+                &res.status()
+            )))
         } else {
-            Err(TwitterError::Api(format!("Unknown error: {}", &res.status())))
+            Err(TwitterError::Api(format!(
+                "Unknown error: {}",
+                &res.status()
+            )))
         }
     }
 
@@ -87,7 +100,8 @@ impl Twitter {
 
         // returns Result<Response>
         // https://docs.rs/reqwest/0.11.6/reqwest/blocking/struct.Response.html
-        let req = self.client
+        let req = self
+            .client
             .delete(&base_url)
             .header("Authorization", authorization);
         dbg!(&req);
@@ -102,11 +116,20 @@ impl Twitter {
             dbg!(&json);
             Ok(json.data)
         } else if res.status().is_server_error() {
-            Err(TwitterError::Api(format!("Server error: {}", &res.status())))
+            Err(TwitterError::Api(format!(
+                "Server error: {}",
+                &res.status()
+            )))
         } else if res.status().is_client_error() {
-            Err(TwitterError::Api(format!("Client error: {}", &res.status())))
+            Err(TwitterError::Api(format!(
+                "Client error: {}",
+                &res.status()
+            )))
         } else {
-            Err(TwitterError::Api(format!("Unknown error: {}", &res.status())))
+            Err(TwitterError::Api(format!(
+                "Unknown error: {}",
+                &res.status()
+            )))
         }
     }
 

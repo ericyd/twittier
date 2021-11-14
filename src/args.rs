@@ -10,23 +10,13 @@ use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
 #[derive(Debug)]
-struct ArgParser {
-    map: HashMap<String, String>,
-}
-
-#[derive(Debug)]
-pub enum Command {
-    Help,
-    Version,
-    Tweet,
-    Delete,
-    Login,
-    Init,
+pub struct Args {
+    pub map: HashMap<String, String>,
 }
 
 // simple argument collector
-impl ArgParser {
-    pub fn new() -> Self {
+impl Args {
+    pub fn parse() -> Result<Self, TwitterError> {
         let args: Vec<String> = std::env::args().collect();
         // Start at 1 to omit the executable name
         let mut i = 1;
@@ -54,7 +44,7 @@ impl ArgParser {
             }
         }
 
-        ArgParser { map }
+        Ok(Args { map })
     }
 
     pub fn get<T: FromStr>(&self, long_name: &str, short_name: &str, default: T) -> T {
@@ -88,9 +78,17 @@ impl ArgParser {
             },
         }
     }
+
+    pub fn is_nth_argument_help(&self, n: i32) -> bool {
+        let first_positional_arg_is_help =
+            self.map.get(&n.to_string()) == Some(&String::from("help"));
+        let requested_help_with_no_positional_arg = self.map.get(&n.to_string()).is_none()
+            && (self.map.get("help").is_some() || self.map.get("h").is_some());
+        first_positional_arg_is_help || requested_help_with_no_positional_arg
+    }
 }
 
-impl Display for ArgParser {
+impl Display for Args {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let key_values = self
             .map
@@ -99,85 +97,6 @@ impl Display for ArgParser {
                 [&vec[..], &vec![format!("{}: {}", k, v)]].concat()
             })
             .join(", ");
-        write!(f, "ArgParser <{}>", key_values)
-    }
-}
-
-// This struct represents a deserialized set of all possible arguments accepted by the program.
-// I don't really think this is the absolute *best* way to do this but it has some advantages and it might be alright.
-#[derive(Debug)]
-pub struct Args {
-    pub raw: HashMap<String, String>,
-    pub command: Command,
-    pub credentials_file: String,
-    pub message: Option<String>,
-    pub profile: Option<String>,
-}
-
-impl Args {
-    // TODO: Does this really need to be a result? What possible errors could we encounter?
-    pub fn parse() -> Result<Self, TwitterError> {
-        let args = ArgParser::new();
-        dbg!(&args);
-        let command = command(&args);
-
-        let credentials_file = args.get(
-            "credentials",
-            "c",
-            String::from(".twitter_credentials.toml"),
-        );
-
-        let message = args.get_option("message", "m");
-
-        let profile = args.get_option("profile", "p");
-
-        Ok(Args {
-            raw: args.map,
-            command,
-            credentials_file,
-            message,
-            profile,
-        })
-    }
-}
-
-impl Display for Args {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(
-            f,
-            "Args <command: {:?}, credentials_file: {}, message: {}>",
-            &self.command,
-            &self.credentials_file,
-            self.message.as_ref().unwrap_or(&"None".to_string())
-        )
-    }
-}
-
-fn command(args: &ArgParser) -> Command {
-    let first_positional_arg_is_help = args.map.get("0") == Some(&String::from("help"));
-    let requested_help_with_no_positional_arg = args.map.get("0").is_none()
-        && (args.map.get("help").is_some() || args.map.get("h").is_some());
-    if first_positional_arg_is_help || requested_help_with_no_positional_arg {
-        return Command::Help;
-    }
-
-    match args.map.get("0") {
-        Some(thing) => match thing.as_str() {
-            "post" => Command::Tweet,
-            "tweet" => Command::Tweet,
-            "delete" => Command::Delete,
-            "init" => Command::Init,
-            "help" => Command::Help,
-            "version" => Command::Version,
-            "login" => Command::Login,
-            _ => {
-                println!("Unknown command: {}", thing);
-                Command::Help
-            }
-        },
-        None => {
-            println!("No command specified");
-            Command::Help
-        }
+        write!(f, "Args <{}>", key_values)
     }
 }

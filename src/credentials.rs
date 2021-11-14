@@ -16,17 +16,15 @@ pub struct Credentials {
 impl From<&Value> for Credentials {
     fn from(value: &Value) -> Credentials {
         match value {
-            Value::Table(fields) => {
-                Credentials {
-                    api_key: fields["api_key"].as_str().unwrap_or("").to_string(),
-                    api_key_secret: fields["api_key_secret"].as_str().unwrap_or("").to_string(),
-                    access_token: fields["access_token"].as_str().unwrap_or("").to_string(),
-                    access_token_secret: fields["access_token_secret"]
-                        .as_str()
-                        .unwrap_or("")
-                        .to_string(),
-                }
-            }
+            Value::Table(fields) => Credentials {
+                api_key: fields["api_key"].as_str().unwrap_or("").to_string(),
+                api_key_secret: fields["api_key_secret"].as_str().unwrap_or("").to_string(),
+                access_token: fields["access_token"].as_str().unwrap_or("").to_string(),
+                access_token_secret: fields["access_token_secret"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_string(),
+            },
             _ => {
                 panic!("Credentials file not formatted correctly! Try using `tw init`")
             }
@@ -52,13 +50,18 @@ fn is_any_empty(credentials: &Credentials) -> bool {
 }
 
 pub fn get(args: &Args) -> Result<Credentials, TwitterError> {
+    let credentials_file = args.get(
+        "credentials",
+        "c",
+        String::from(".twitter_credentials.toml"),
+    );
     let mut path = PathBuf::from(home_dir());
-    path.push(&args.credentials_file);
+    path.push(&credentials_file);
 
     path = fs::canonicalize(&path)?;
     let contents = fs::read_to_string(&path)?;
 
-    match &args.profile {
+    match args.get_option::<String>("profile", "p") {
         Some(profile) => {
             let credentials: Value = toml::from_str(&contents)?;
             let profile_credentials: Credentials = credentials
@@ -97,8 +100,13 @@ fn write_empty_credentials(path: &PathBuf) -> Result<(), TwitterError> {
 }
 
 pub fn init(args: &Args) -> Result<(), TwitterError> {
+    let credentials_file = args.get(
+        "credentials",
+        "c",
+        String::from(".twitter_credentials.toml"),
+    );
     let mut path = PathBuf::from(home_dir());
-    path.push(&args.credentials_file);
+    path.push(&credentials_file);
 
     match fs::canonicalize(&path) {
         Ok(_) => {
