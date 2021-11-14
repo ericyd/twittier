@@ -1,11 +1,12 @@
 use std::process;
 
 mod args;
-use args::Args;
 mod credentials;
 mod error;
-mod tweet;
 mod twitter;
+mod commands;
+
+use args::BaseArgs;
 
 #[derive(Debug)]
 enum Command {
@@ -13,31 +14,25 @@ enum Command {
     Version,
     Tweet,
     Delete,
-    Login,
     Init,
 }
 
 fn main() {
     // Pattern lifted wholesale from ripgrep ¯\_(ツ)_/¯
     // https://github.com/BurntSushi/ripgrep/blob/e6cac8b119d0d50646b3ba1aaf53e648c779901a/crates/core/main.rs#L48-L74
-    if let Err(err) = Args::parse().and_then(try_main) {
+    if let Err(err) = BaseArgs::parse().and_then(try_main) {
         eprintln!("{}", err);
         process::exit(2);
     }
 }
 
-fn try_main(args: Args) -> Result<(), error::TwitterError> {
+fn try_main(args: BaseArgs) -> Result<(), error::TwitterError> {
     dbg!(&args);
     match command(&args) {
-        Command::Tweet => tweet::post(&args),
-        Command::Delete => tweet::delete(&args),
+        Command::Tweet => commands::post(&args),
+        Command::Delete => commands::delete(&args),
         Command::Version => {
             println!("Twitter CLI 🐤 v0.1.0");
-            Ok(())
-        }
-        Command::Login => {
-            let credentials = credentials::get(&args)?;
-            dbg!(credentials);
             Ok(())
         }
         Command::Init => credentials::init(&args),
@@ -45,12 +40,12 @@ fn try_main(args: Args) -> Result<(), error::TwitterError> {
     }
 }
 
-fn command(args: &Args) -> Command {
+fn command(args: &BaseArgs) -> Command {
     if args.is_nth_argument_help(0) {
         return Command::Help;
     }
 
-    match args.map.get("0") {
+    match args.get_position::<String>(0) {
         Some(thing) => match thing.as_str() {
             "post" => Command::Tweet,
             "p" => Command::Tweet,
@@ -59,7 +54,6 @@ fn command(args: &Args) -> Command {
             "init" => Command::Init,
             "help" => Command::Help,
             "version" => Command::Version,
-            "login" => Command::Login,
             _ => {
                 println!("Unknown command: {}", thing);
                 Command::Help

@@ -1,4 +1,4 @@
-use super::args::Args;
+use super::args::BaseArgs;
 use super::error::TwitterError;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fs;
@@ -49,8 +49,8 @@ fn is_any_empty(credentials: &Credentials) -> bool {
         || credentials.access_token_secret.is_empty()
 }
 
-pub fn get(args: &Args) -> Result<Credentials, TwitterError> {
-    let credentials_file = args.get(
+pub fn get(base_args: &BaseArgs) -> Result<Credentials, TwitterError> {
+    let credentials_file = base_args.get(
         "credentials",
         "c",
         String::from(".twitter_credentials.toml"),
@@ -61,7 +61,7 @@ pub fn get(args: &Args) -> Result<Credentials, TwitterError> {
     path = fs::canonicalize(&path)?;
     let contents = fs::read_to_string(&path)?;
 
-    match args.get_option::<String>("profile", "p") {
+    match base_args.get_option::<String>("profile", "p") {
         Some(profile) => {
             let credentials: Value = toml::from_str(&contents)?;
             let profile_credentials: Credentials = credentials
@@ -99,8 +99,8 @@ fn write_empty_credentials(path: &PathBuf) -> Result<(), TwitterError> {
     Ok(())
 }
 
-pub fn init(args: &Args) -> Result<(), TwitterError> {
-    let credentials_file = args.get(
+pub fn init(base_args: &BaseArgs) -> Result<(), TwitterError> {
+    let credentials_file = base_args.get(
         "credentials",
         "c",
         String::from(".twitter_credentials.toml"),
