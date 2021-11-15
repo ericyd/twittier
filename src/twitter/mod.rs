@@ -25,8 +25,17 @@ pub struct TwitterResponse<T> {
 pub struct TwitterUser {
     id: u64,
     id_str: String,
-    name: String, // display name
+    name: String,        // display name
     screen_name: String, // handle
+    verified: bool,
+}
+
+// This has basically everything that TwitterFeedItem has, but I don't want to deal with making a recursive structure work
+#[derive(Deserialize, Debug)]
+pub struct TwitterStatus {
+    id_str: String, // identical to id, but in String formaat
+    text: String,
+    user: TwitterUser,
 }
 
 #[derive(Deserialize, Debug)]
@@ -36,6 +45,69 @@ pub struct TwitterFeedItem {
     id_str: String, // identical to id, but in String formaat
     text: String,
     user: TwitterUser,
+    retweet_count: i32,
+    favorite_count: i32,
+    favorited: bool,
+    retweeted: bool,
+    in_reply_to_status_id: Option<u64>,
+    in_reply_to_status_id_str: Option<String>,
+    in_reply_to_user_id: Option<u64>,
+    in_reply_to_user_id_str: Option<String>,
+    in_reply_to_screen_name: Option<String>,
+    retweeted_status: Option<TwitterStatus>,
+}
+
+impl TwitterFeedItem {
+    pub fn display(&self) {
+        println!("---------------------------------\n");
+        println!("{}, @{}", self.user.name, self.user.screen_name);
+        match self.retweeted_status {
+            Some(ref retweeted_status) => println!(
+                "Retweeted from: {}, @{}",
+                retweeted_status.user.name, retweeted_status.user.screen_name
+            ),
+            None => (),
+        };
+
+        // Future optimization: This doesn't come sequentially in the feed,
+        // so a cool future enhancement would be to organize this data such that
+        // if a tweet is in reply to another tweet,
+        // go and fetch it (or find it in the vec) and print them near each other
+        match self.in_reply_to_screen_name {
+            Some(ref in_reply_to_screen_name) => println!(
+                "Replied to: {} - https://twitter.com/{}/status/{}",
+                in_reply_to_screen_name,
+                in_reply_to_screen_name,
+                self.in_reply_to_status_id_str
+                    .as_ref()
+                    .unwrap_or(&"".to_string())
+            ),
+            None => (),
+        };
+        println!("");
+
+        // Actual tweet text is in the re-tweet.
+        // TODO: not sure about quoted retweets actually 🤔
+        match self.retweeted_status {
+            Some(ref retweeted_status) => println!("{}", retweeted_status.text),
+            None => println!("{}", self.text),
+        };
+
+        // Get those stats
+        println!("");
+        println!(
+            "{}{} Retweets      {}{} Likes",
+            self.retweet_count,
+            if self.retweeted { "✅" } else { "" },
+            self.favorite_count,
+            if self.favorited { "✅" } else { "" }
+        );
+
+        println!(
+            "https://twitter.com/{}/status/{}\n{}\n",
+            self.user.screen_name, self.id_str, self.created_at
+        );
+    }
 }
 
 type TwitterFeed = Vec<TwitterFeedItem>;
@@ -126,7 +198,7 @@ impl Twitter {
 
     // https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/get-statuses-home_timeline
     // https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/guides/working-with-timelines
-    pub fn feed(&self, count: i32) -> Result<(), TwitterError> {
+    pub fn feed(&self, count: i32) -> Result<TwitterFeed, TwitterError> {
         dbg!(format!("Fetching feed with count: {}", count));
 
         // UGH... to have query params, I will need to send them in too build_authorization separately from the base_url, then re-encode it here...
@@ -146,9 +218,10 @@ impl Twitter {
         dbg!(&res);
 
         if res.status().is_success() {
+            // dbg!(res.text()?);
+            // Ok(vec![])
             let json: TwitterFeed = res.json()?;
-            dbg!(&json);
-            Ok(())
+            Ok(json)
         } else {
             Err(self.error(res))
         }
@@ -255,20 +328,11 @@ impl Twitter {
     // https://docs.rs/reqwest/0.11.6/reqwest/struct.StatusCode.html#impl-1
     fn error(&self, res: reqwest::blocking::Response) -> TwitterError {
         if res.status().is_server_error() {
-            TwitterError::Api(format!(
-                "Server error: {}",
-                &res.status()
-            ))
+            TwitterError::Api(format!("Server error: {}", &res.status()))
         } else if res.status().is_client_error() {
-            TwitterError::Api(format!(
-                "Client error: {}",
-                &res.status()
-            ))
+            TwitterError::Api(format!("Client error: {}", &res.status()))
         } else {
-            TwitterError::Api(format!(
-                "Unknown error: {}",
-                &res.status()
-            ))
+            TwitterError::Api(format!("Unknown error: {}", &res.status()))
         }
     }
 }

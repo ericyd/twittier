@@ -30,5 +30,11 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
     let credentials = credentials::get(base_args)?;
     dbg!(&credentials);
 
-    Twitter::new(credentials).feed(5)
+    let feed = Twitter::new(credentials).feed(5)?;
+
+    for item in feed {
+        item.display();
+    }
+
+    Ok(())
 }
