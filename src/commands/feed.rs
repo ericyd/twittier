@@ -12,10 +12,11 @@ struct Args {
 }
 
 fn parse(args: &BaseArgs) -> Args {
-    Args {
-        // TODO: this should just be positional
-        count: args.get("count", "n", 1),
-    }
+    let count = match args.get_position::<String>(1) {
+        Some(count) => count.parse::<i32>().unwrap(),
+        None => 10,
+    };
+    Args { count }
 }
 
 fn help() -> Result<(), TwitterError> {
