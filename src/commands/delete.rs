@@ -1,11 +1,7 @@
 use super::super::args::BaseArgs;
 use super::super::credentials;
 use super::super::error::TwitterError;
-use super::super::twitter::{Twitter, TwitterCreateResponseData};
-use std::fs;
-use std::fs::File;
-use std::fs::OpenOptions;
-use std::path::PathBuf;
+use super::super::twitter;
 
 struct Args {
     id: Option<String>,
@@ -33,11 +29,11 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
     match args.id {
         // TODO: find latest tweet and delete
         // Some(id) if *id == "last" => {
-        //     Twitter::new(credentials).post_v2(&message).unwrap()
+        //     Client::new(credentials).post_v2(&message).unwrap()
         //     Ok(())
         // }
         Some(id) if id != "" => {
-            let response = Twitter::new(credentials).delete_v2(&id)?;
+            let response = twitter::Client::new(credentials).delete_v2(&id)?;
             if response.deleted == true {
                 Ok(())
             } else {

@@ -1,10 +1,8 @@
 use super::super::args::BaseArgs;
 use super::super::credentials::{Credentials, CredentialsFile};
 use super::super::error::TwitterError;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
-use toml::Value;
 
 struct Args {
     credentials_file: String,

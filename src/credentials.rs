@@ -1,6 +1,6 @@
 use super::args::BaseArgs;
 use super::error::TwitterError;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use toml::Value;

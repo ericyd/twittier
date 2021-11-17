@@ -10,7 +10,7 @@ use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
 #[derive(Debug)]
-pub struct BaseArgs{
+pub struct BaseArgs {
     named: HashMap<String, String>,
     positional: Vec<String>,
 }
@@ -91,8 +91,7 @@ impl BaseArgs {
     }
 
     pub fn is_nth_argument_help(&self, n: usize) -> bool {
-        let first_positional_arg_is_help =
-            self.positional.get(n) == Some(&String::from("help"));
+        let first_positional_arg_is_help = self.positional.get(n) == Some(&String::from("help"));
         let requested_help_with_no_positional_arg = self.positional.get(n).is_none()
             && (self.named.get("help").is_some() || self.named.get("h").is_some());
         first_positional_arg_is_help || requested_help_with_no_positional_arg

@@ -1,11 +1,7 @@
 use super::super::args::BaseArgs;
 use super::super::credentials;
 use super::super::error::TwitterError;
-use super::super::twitter::{Twitter, TwitterCreateResponseData};
-use std::fs;
-use std::fs::File;
-use std::fs::OpenOptions;
-use std::path::PathBuf;
+use super::super::twitter;
 
 struct Args {
     message: Option<String>,
@@ -22,6 +18,10 @@ fn help() -> Result<(), TwitterError> {
     Ok(())
 }
 
+/*
+Future plans: Append tweets to a file.
+
+use super::super::twitter::TwitterCreateResponseData;
 struct TwitterHistoryFile {
     tweets: Vec<TwitterCreateResponseData>,
 }
@@ -50,6 +50,7 @@ fn append_response_to_history(response: TwitterCreateResponseData) -> Result<(),
 
     Ok(())
 }
+*/
 
 pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
     if base_args.is_nth_argument_help(1) {
@@ -61,9 +62,9 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
 
     match args.message {
         Some(message) if &message != "" => {
-            let response = Twitter::new(credentials).post_v2(&message)?;
+            let response = twitter::Client::new(credentials).post_v2(&message)?;
             println!("Posted tweet id: {}", response.id);
-            append_response_to_history(response)
+            Ok(())
         }
         _ => Err(TwitterError::MissingArgument("message".to_string())),
     }

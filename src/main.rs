@@ -63,16 +63,13 @@ fn command(args: &BaseArgs) -> Command {
                 Command::Help
             }
         },
-        None => {
-            match args.get_option::<String>("version", "v") {
-                Some(_) => Command::Version,
-                None => {
-                    println!("No command specified");
-                    Command::Help
-                },
+        None => match args.get_option::<String>("version", "v") {
+            Some(_) => Command::Version,
+            None => {
+                println!("No command specified");
+                Command::Help
             }
-            
-        }
+        },
     }
 }
 
