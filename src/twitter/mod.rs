@@ -2,6 +2,7 @@ use super::credentials::Credentials;
 use super::error::TwitterError;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
+use std::marker::Sized;
 use std::time::{SystemTime, UNIX_EPOCH};
 use urlencoding::encode;
 
@@ -112,16 +113,11 @@ impl TwitterFeedItem {
 
 type TwitterFeed = Vec<TwitterFeedItem>;
 
+type ParameterList<'a> = &'a [(&'a str, String)];
+
 pub struct Twitter {
     credentials: Credentials,
     client: reqwest::blocking::Client,
-}
-
-struct OauthParams {
-    oauth_consumer_key: String,
-    oauth_nonce: String,
-    oauth_timestamp: String,
-    oauth_token: String,
 }
 
 impl Twitter {
@@ -141,7 +137,7 @@ impl Twitter {
         dbg!(format!("Posting message: {}", message));
 
         let base_url = "https://api.twitter.com/2/tweets";
-        let authorization = self.build_authorization("POST", &base_url);
+        let authorization = self.build_authorization("POST", &base_url, None);
 
         let mut body = HashMap::new();
         body.insert("text", message);
@@ -174,7 +170,7 @@ impl Twitter {
         dbg!(format!("Deleting id: {}", id));
 
         let base_url = format!("https://api.twitter.com/2/tweets/{}", id);
-        let authorization = self.build_authorization("DELETE", &base_url);
+        let authorization = self.build_authorization("DELETE", &base_url, None);
 
         // returns Result<Response>
         // https://docs.rs/reqwest/0.11.6/reqwest/blocking/struct.Response.html
@@ -204,13 +200,14 @@ impl Twitter {
         // UGH... to have query params, I will need to send them in too build_authorization separately from the base_url, then re-encode it here...
         // might need to use a custom struct for feed args, too keep this from getting too wild.
         let base_url = "https://api.twitter.com/1.1/statuses/home_timeline.json";
-        let authorization = self.build_authorization("GET", base_url);
+        let params = &[("count", count.to_string())];
+        let authorization = self.build_authorization("GET", base_url, Some(params));
 
         // returns Result<Response>
         // https://docs.rs/reqwest/0.11.6/reqwest/blocking/struct.Response.html
         let req = self
             .client
-            .get(base_url)
+            .get(&format!("{}?count={}", base_url, count))
             .header("Authorization", authorization);
         dbg!(&req);
 
@@ -227,27 +224,32 @@ impl Twitter {
         }
     }
 
-    fn build_authorization(&self, method: &str, base_url: &str) -> String {
-        let params = OauthParams {
-            oauth_consumer_key: self.credentials.api_key.to_owned(),
-            oauth_nonce: self.nonce(),
-            oauth_timestamp: self.timestamp(),
-            oauth_token: self.credentials.access_token.to_owned(),
-        };
-
-        // Twitter takes their authorization seriously
-        // TODO: I think there are cleaner ways to abstract this
-        // https://developer.twitter.com/en/docs/authentication/oauth-1-0a/creating-a-signature
+    // Twitter takes their authorization seriously
+    // https://developer.twitter.com/en/docs/authentication/oauth-1-0a/creating-a-signature
+    fn build_authorization(
+        &self,
+        method: &str,
+        base_url: &str,
+        request_params: Option<ParameterList>,
+    ) -> String {
+        let parameters = &[
+            ("oauth_consumer_key", self.credentials.api_key.to_owned()),
+            ("oauth_nonce", self.nonce()),
+            ("oauth_signature_method", "HMAC-SHA1".to_string()),
+            ("oauth_timestamp", self.timestamp()),
+            ("oauth_token", self.credentials.access_token.to_owned()),
+            ("oauth_version", "1.0".to_string()),
+        ];
         let encoded_request = format!(
             "{}&{}&{}",
             method,
             encode(base_url),
-            encode(&self.parameter_string(&params))
+            encode(&self.parameter_string(parameters, request_params, "&", false))
         );
         let hashed_request = self.hash(&self.signing_key(), &encoded_request);
         let oath_signature = base64::encode(&hashed_request);
 
-        let authorization = self.authorization(&params, &oath_signature);
+        let authorization = self.authorization_header(parameters, &oath_signature);
         dbg!(&authorization);
         authorization
     }
@@ -286,42 +288,50 @@ impl Twitter {
     }
 
     // https://developer.twitter.com/en/docs/authentication/oauth-1-0a/authorizing-a-request
-    fn authorization(&self, params: &OauthParams, signature: &str) -> String {
+    fn authorization_header(&self, params: ParameterList, signature: &str) -> String {
         format!(
-            concat!(
-                "OAuth ",
-                "oauth_consumer_key=\"{}\",",
-                "oauth_token=\"{}\",",
-                "oauth_signature_method=\"HMAC-SHA1\",",
-                "oauth_timestamp=\"{}\",",
-                "oauth_nonce=\"{}\",",
-                "oauth_version=\"1.0\",",
-                "oauth_signature=\"{}\"",
-            ),
-            encode(&params.oauth_consumer_key),
-            encode(&params.oauth_token),
-            encode(&params.oauth_timestamp),
-            encode(&params.oauth_nonce),
-            encode(&signature),
+            "Oauth {}",
+            self.parameter_string(
+                params,
+                Some(&[("oauth_signature", signature.to_string())]),
+                ",",
+                true
+            )
         )
     }
 
-    fn parameter_string(&self, params: &OauthParams) -> String {
-        // I'm confident there is a better way to do this with Serialize or Deserialize but this works for now
-        format!(
-            concat!(
-                "oauth_consumer_key={}&",
-                "oauth_nonce={}&",
-                "oauth_signature_method=HMAC-SHA1&",
-                "oauth_timestamp={}&",
-                "oauth_token={}&",
-                "oauth_version=1.0",
-            ),
-            encode(&params.oauth_consumer_key),
-            encode(&params.oauth_nonce),
-            encode(&params.oauth_timestamp),
-            encode(&params.oauth_token),
-        )
+    /// Takes a list of parameters and returns a string of them all joined by the given separator.
+    /// All parameters are URL encoded.
+    ///
+    /// Example
+    ///    self.parameter_string(&[("test", "data".to_string()), ("is", "fun".to_string())], "&", false)
+    ///    => "test=data&is=fun"
+    ///
+    ///    self.parameter_string(&[("test", "data".to_string()), ("is", "fun".to_string())], ",", true)
+    ///    => "test=\"data\",is=\"fun\""
+    fn parameter_string(
+        &self,
+        oauth_params: ParameterList,
+        request_params: Option<ParameterList>,
+        join_str: &str,
+        wrap_in_quotes: bool,
+    ) -> String {
+        let mut params = match request_params {
+            Some(params) => [params, oauth_params].concat(),
+            None => [oauth_params].concat(),
+        };
+        params.sort_by(|a, b| a.0.cmp(b.0));
+        params
+            .iter()
+            .map(|(key, value)| {
+                if wrap_in_quotes {
+                    format!("{}=\"{}\"", encode(key), encode(value))
+                } else {
+                    format!("{}={}", encode(key), encode(value))
+                }
+            })
+            .collect::<Vec<String>>()
+            .join(join_str)
     }
 
     // Possible to use match on the enum if desired

@@ -19,6 +19,7 @@ enum Command {
 }
 
 fn main() {
+    print_banner();
     // Pattern lifted wholesale from ripgrep ¯\_(ツ)_/¯
     // https://github.com/BurntSushi/ripgrep/blob/e6cac8b119d0d50646b3ba1aaf53e648c779901a/crates/core/main.rs#L48-L74
     if let Err(err) = BaseArgs::parse().and_then(try_main) {
@@ -63,8 +64,14 @@ fn command(args: &BaseArgs) -> Command {
             }
         },
         None => {
-            println!("No command specified");
-            Command::Help
+            match args.get_option::<String>("version", "v") {
+                Some(_) => Command::Version,
+                None => {
+                    println!("No command specified");
+                    Command::Help
+                },
+            }
+            
         }
     }
 }
@@ -81,4 +88,19 @@ Commands:
     );
 
     Ok(())
+}
+
+// Thanks to WireMock for the idea 😛
+// https://github.com/wiremock/wiremock/blob/a8f8f40999eafecea03a83a86ff5ac14daeab1a5/src/main/java/com/github/tomakehurst/wiremock/standalone/WireMockServerRunner.java#L36-L43
+fn print_banner() {
+    println!(
+        " /██████████ /██       /██ /██ /██████████ /██████████ /██ /████████ /███████▙
+|___  ██    | ██  /▟▙ | ██| ██|___  ██ __/|___  ██ __/| ██| ██_____/| ██____/▐█
+    | ██    | ██ /▟██▙| ██| ██    | ██        | ██    | ██| ██      | ██    |▐█
+    | ██    | ██/▟█▘ ▜▙ ██| ██    | ██        | ██    | ██| ████████| ████████▘
+    | ██    | ████▘_  ▜███| ██    | ██        | ██    | ██| ██_____/| ██  ▜█▙
+    | ██    | ███▘/ \\  ▜██| ██    | ██        | ██    | ██| ██      | ██ \\ ▜█▙
+    | ██    | ██▘/   \\  ▜█| ██    | ██        | ██    | ██| ████████| ██  \\ ▜█▙
+    |__/    |__/      \\__/|__/    |__/        |__/    |__/|________/|__/   \\__/"
+    );
 }

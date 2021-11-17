@@ -13,7 +13,8 @@ struct Args {
 
 fn parse(args: &BaseArgs) -> Args {
     Args {
-        count: args.get("count", "c", 1),
+        // TODO: this should just be positional
+        count: args.get("count", "n", 1),
     }
 }
 
@@ -30,7 +31,7 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
     let credentials = credentials::get(base_args)?;
     dbg!(&credentials);
 
-    let feed = Twitter::new(credentials).feed(5)?;
+    let feed = Twitter::new(credentials).feed(args.count)?;
 
     for item in feed {
         item.display();
