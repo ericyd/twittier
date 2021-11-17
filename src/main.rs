@@ -29,7 +29,7 @@ fn main() {
 }
 
 fn try_main(args: BaseArgs) -> Result<(), error::TwitterError> {
-    dbg!(&args);
+    args.debug(&args);
     match command(&args) {
         Command::Tweet => commands::post(&args),
         Command::Delete => commands::delete(&args),
@@ -44,10 +44,6 @@ fn try_main(args: BaseArgs) -> Result<(), error::TwitterError> {
 }
 
 fn command(args: &BaseArgs) -> Command {
-    if args.is_nth_argument_help(0) {
-        return Command::Help;
-    }
-
     match args.get_position::<String>(0) {
         Some(thing) => match thing.as_str() {
             "post" => Command::Tweet,
@@ -63,10 +59,12 @@ fn command(args: &BaseArgs) -> Command {
                 Command::Help
             }
         },
-        None => match args.get_option::<String>("version", "v") {
-            Some(_) => Command::Version,
-            None => {
-                println!("No command specified");
+        None => match args.get_flag("version", "v") {
+            true => Command::Version,
+            false => {
+                if !args.is_requesting_help() {
+                    println!("No command specified");
+                }
                 Command::Help
             }
         },

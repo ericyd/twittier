@@ -19,6 +19,7 @@ fn parse(args: &BaseArgs) -> Args {
 
 fn help() -> Result<(), TwitterError> {
     println!("TODO: document");
+    println!("init");
     Ok(())
 }
 
@@ -55,7 +56,7 @@ fn write_empty_credentials(path: &PathBuf) -> Result<(), TwitterError> {
 }
 
 pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
-    if base_args.is_nth_argument_help(1) {
+    if base_args.is_requesting_help() {
         return help();
     }
     let args = parse(&base_args);

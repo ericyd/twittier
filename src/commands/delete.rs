@@ -15,16 +15,17 @@ fn parse(args: &BaseArgs) -> Args {
 
 fn help() -> Result<(), TwitterError> {
     println!("TODO: document");
+    println!("delete");
     Ok(())
 }
 
 pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
-    if base_args.is_nth_argument_help(1) {
+    if base_args.is_requesting_help() {
         return help();
     }
     let args = parse(&base_args);
     let credentials = credentials::get(base_args)?;
-    dbg!(&credentials);
+    base_args.debug(&credentials);
 
     match args.id {
         // TODO: find latest tweet and delete
@@ -33,7 +34,7 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
         //     Ok(())
         // }
         Some(id) if id != "" => {
-            let response = twitter::Client::new(credentials).delete_v2(&id)?;
+            let response = twitter::Client::new(credentials, base_args).delete_v2(&id)?;
             if response.deleted == true {
                 Ok(())
             } else {

@@ -13,6 +13,8 @@ use std::str::FromStr;
 pub struct BaseArgs {
     named: HashMap<String, String>,
     positional: Vec<String>,
+    flags: HashMap<String, bool>,
+    is_debug: bool,
 }
 
 // simple argument collector
@@ -22,30 +24,49 @@ impl BaseArgs {
         // Start at 1 to omit the executable name
         let mut i = 1;
         let mut named = HashMap::new();
+        let mut flags = HashMap::new();
         let mut positional = Vec::new();
 
-        // TODO: handle flag arguments
-        //      - if the next argument is a flag, or if it's the last argument, then assume it's a flag and set value to true
-        //      - This is a good idea, but currently have no flag args 😛
+        // This is the ugliest shit, maybe consider cleaning it up...
         while i < args.len() {
             let arg = &args[i];
             if arg.starts_with("--") {
                 let key = arg.trim_start_matches("--").to_string();
-                let value = if i + 1 < args.len() { &args[i + 1] } else { "" };
-                named.insert(key, value.to_string());
-                i += 2;
+                // If this argument is last in the list, or the next one is also a named arg, do not use next arg as value
+                let is_flag_arg = i + 1 >= args.len() || args[i + 1].starts_with("-");
+                if is_flag_arg {
+                    flags.insert(key, true);
+                    i += 1;
+                } else {
+                    named.insert(key, args[i + 1].to_string());
+                    i += 2;
+                };
             } else if arg.starts_with("-") {
                 let key = arg.trim_start_matches("-").to_string();
-                let value = if i + 1 < args.len() { &args[i + 1] } else { "" };
-                named.insert(key, value.to_string());
-                i += 2;
+                // If this argument is last in the list, or the next one is also a named arg, do not use next arg as value
+                let is_flag_arg = i + 1 >= args.len() || args[i + 1].starts_with("-");
+                if is_flag_arg {
+                    flags.insert(key, true);
+                    i += 1;
+                } else {
+                    named.insert(key, args[i + 1].to_string());
+                    i += 2;
+                };
             } else {
                 positional.push(arg.to_string());
                 i += 1;
             }
         }
 
-        Ok(Self { named, positional })
+        // I'm absolutely SURE this is bad practice but I don't care
+        let is_debug = flags.get("debug").unwrap_or(&false).clone();
+
+        Ok(Self {
+            named,
+            positional,
+            flags,
+            is_debug,
+        })
     }
 
     pub fn get<T: FromStr>(&self, long_name: &str, short_name: &str, default: T) -> T {
@@ -90,11 +111,32 @@ impl BaseArgs {
         }
     }
 
-    pub fn is_nth_argument_help(&self, n: usize) -> bool {
-        let first_positional_arg_is_help = self.positional.get(n) == Some(&String::from("help"));
-        let requested_help_with_no_positional_arg = self.positional.get(n).is_none()
-            && (self.named.get("help").is_some() || self.named.get("h").is_some());
-        first_positional_arg_is_help || requested_help_with_no_positional_arg
+    pub fn get_flag(&self, long_name: &str, short_name: &str) -> bool {
+        match self.flags.get(long_name) {
+            Some(result) => *result,
+            None => match self.flags.get(short_name) {
+                Some(result) => *result,
+                None => false,
+            },
+        }
+    }
+
+    pub fn is_requesting_help(&self) -> bool {
+        let last_positional_arg_is_help = match self.positional.last() {
+            Some(arg) => arg == "help" || arg == "h",
+            None => false,
+        };
+        let is_help_flag_set = self.flags.get("help").is_some()
+            || self.flags.get("h").is_some()
+            || self.named.get("help").is_some()
+            || self.named.get("h").is_some();
+        last_positional_arg_is_help || is_help_flag_set
+    }
+
+    pub fn debug<T: std::fmt::Debug>(&self, thing: &T) {
+        if self.is_debug {
+            dbg!(thing);
+        }
     }
 }
 

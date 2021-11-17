@@ -17,18 +17,19 @@ fn parse(args: &BaseArgs) -> Args {
 
 fn help() -> Result<(), TwitterError> {
     println!("TODO: document");
+    println!("feed");
     Ok(())
 }
 
 pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
-    if base_args.is_nth_argument_help(1) {
+    if base_args.is_requesting_help() {
         return help();
     }
     let args = parse(&base_args);
     let credentials = credentials::get(base_args)?;
-    dbg!(&credentials);
+    base_args.debug(&credentials);
 
-    let feed = twitter::Client::new(credentials).feed(args.count)?;
+    let feed = twitter::Client::new(credentials, base_args).feed(args.count)?;
 
     for item in feed {
         item.display();

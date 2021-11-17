@@ -1,3 +1,4 @@
+use super::super::args::BaseArgs;
 use super::super::credentials::Credentials;
 use super::super::error::TwitterError;
 use super::TwitterCreateResponseData;
@@ -10,13 +11,14 @@ use urlencoding::encode;
 
 type ParameterList<'a> = &'a [(&'a str, String)];
 
-pub struct Client {
+pub struct Client<'c> {
     credentials: Credentials,
     client: reqwest::blocking::Client,
+    args: &'c BaseArgs,
 }
 
-impl Client {
-    pub fn new(credentials: Credentials) -> Self {
+impl<'c> Client<'c> {
+    pub fn new(credentials: Credentials, args: &'c BaseArgs) -> Self {
         // Async is obviously the cooler way but I know nothing about Rust Futures and it felt out of scope for this stage. From the reqwest docs:
         // "For applications wishing to only make a few HTTP requests, the reqwest::blocking API may be more convenient."
         // https://docs.rs/reqwest/0.11.6/reqwest/blocking/index.html
@@ -24,12 +26,13 @@ impl Client {
         Self {
             credentials,
             client,
+            args,
         }
     }
 
     // https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
     pub fn post_v2(&self, message: &str) -> Result<TwitterCreateResponseData, TwitterError> {
-        dbg!(format!("Posting message: {}", message));
+        self.args.debug(&format!("Posting message: {}", message));
 
         let base_url = "https://api.twitter.com/2/tweets";
         let authorization = self.build_authorization("POST", &base_url, None);
@@ -44,16 +47,16 @@ impl Client {
             .post(base_url)
             .header("Authorization", authorization)
             .json(&body);
-        dbg!(&req);
+        self.args.debug(&req);
 
         let res = req.send()?;
-        dbg!(&res);
+        self.args.debug(&res);
 
         // Possible to use match on the enum if desired
         // https://docs.rs/reqwest/0.11.6/reqwest/struct.StatusCode.html#impl-1
         if res.status().is_success() {
             let json: TwitterResponse<TwitterCreateResponseData> = res.json()?;
-            dbg!(&json);
+            self.args.debug(&json);
             Ok(json.data)
         } else {
             Err(self.error(res))
@@ -62,7 +65,7 @@ impl Client {
 
     // https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/delete-tweets-id
     pub fn delete_v2(&self, id: &str) -> Result<TwitterDeleteResponseData, TwitterError> {
-        dbg!(format!("Deleting id: {}", id));
+        self.args.debug(&format!("Deleting id: {}", id));
 
         let base_url = format!("https://api.twitter.com/2/tweets/{}", id);
         let authorization = self.build_authorization("DELETE", &base_url, None);
@@ -73,14 +76,14 @@ impl Client {
             .client
             .delete(&base_url)
             .header("Authorization", authorization);
-        dbg!(&req);
+        self.args.debug(&req);
 
         let res = req.send()?;
-        dbg!(&res);
+        self.args.debug(&res);
 
         if res.status().is_success() {
             let json: TwitterResponse<TwitterDeleteResponseData> = res.json()?;
-            dbg!(&json);
+            self.args.debug(&json);
             Ok(json.data)
         } else {
             Err(self.error(res))
@@ -90,7 +93,8 @@ impl Client {
     // https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/api-reference/get-statuses-home_timeline
     // https://developer.twitter.com/en/docs/twitter-api/v1/tweets/timelines/guides/working-with-timelines
     pub fn feed(&self, count: i32) -> Result<TwitterFeed, TwitterError> {
-        dbg!(format!("Fetching feed with count: {}", count));
+        self.args
+            .debug(&format!("Fetching feed with count: {}", count));
 
         // UGH... to have query params, I will need to send them in too build_authorization separately from the base_url, then re-encode it here...
         // might need to use a custom struct for feed args, too keep this from getting too wild.
@@ -104,13 +108,13 @@ impl Client {
             .client
             .get(&format!("{}?count={}", base_url, count))
             .header("Authorization", authorization);
-        dbg!(&req);
+        self.args.debug(&req);
 
         let res = req.send()?;
-        dbg!(&res);
+        self.args.debug(&res);
 
         if res.status().is_success() {
-            // dbg!(res.text()?);
+            // self.args.debug(res.text()?);
             // Ok(vec![])
             let json: TwitterFeed = res.json()?;
             Ok(json)
@@ -145,7 +149,6 @@ impl Client {
         let oath_signature = base64::encode(&hashed_request);
 
         let authorization = self.authorization_header(parameters, &oath_signature);
-        dbg!(&authorization);
         authorization
     }
 
