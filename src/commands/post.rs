@@ -5,13 +5,16 @@ use super::super::twitter;
 
 struct Args {
     message: String,
+    in_reply_to_tweet_id: Option<String>
 }
 
 fn parse(args: &BaseArgs) -> Result<Args, TwitterError> {
-    match args.get_position::<String>(1) {
-        Some(message) if &message != "" => Ok(Args { message }),
-        _ => Err(TwitterError::MissingArgument("message".to_string())),
-    }
+    let message = match args.get_position::<String>(1) {
+        Some(message) if &message != "" => message,
+        _ => return Err(TwitterError::MissingArgument("message".to_string())),
+    };
+    let in_reply_to_tweet_id = args.get_option("reply-id", "r");
+    Ok(Args { message, in_reply_to_tweet_id })
 }
 
 fn help() -> Result<(), TwitterError> {
@@ -62,7 +65,7 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
     let credentials = credentials::get(base_args)?;
     base_args.debug(&credentials);
 
-    let response = twitter::Client::new(credentials, base_args).post_v2(&args.message)?;
+    let response = twitter::Client::new(credentials, base_args).post_v2(&args.message, &args.in_reply_to_tweet_id)?;
     println!("Posted tweet id: {}", response.id);
     Ok(())
 }

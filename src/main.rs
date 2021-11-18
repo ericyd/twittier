@@ -35,7 +35,7 @@ fn try_main(args: BaseArgs) -> Result<(), error::TwitterError> {
         Command::Delete => commands::delete(&args),
         Command::Feed => commands::feed(&args),
         Command::Version => {
-            println!("Twitter CLI 🐤 v0.1.0");
+            println!("🐤 v0.1.0");
             Ok(())
         }
         Command::Init => commands::init(&args),

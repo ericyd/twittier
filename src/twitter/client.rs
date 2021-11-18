@@ -5,9 +5,9 @@ use super::TwitterCreateResponseData;
 use super::TwitterDeleteResponseData;
 use super::TwitterFeed;
 use super::TwitterResponse;
-use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 use urlencoding::encode;
+use serde_json::json;
 
 type ParameterList<'a> = &'a [(&'a str, String)];
 
@@ -31,14 +31,24 @@ impl<'c> Client<'c> {
     }
 
     // https://developer.twitter.com/en/docs/twitter-api/tweets/manage-tweets/api-reference/post-tweets
-    pub fn post_v2(&self, message: &str) -> Result<TwitterCreateResponseData, TwitterError> {
+    pub fn post_v2(&self, message: &str, in_reply_to_tweet_id: &Option<String>) -> Result<TwitterCreateResponseData, TwitterError> {
         self.args.debug(&format!("Posting message: {}", message));
 
         let base_url = "https://api.twitter.com/2/tweets";
         let authorization = self.build_authorization("POST", &base_url, None);
 
-        let mut body = HashMap::new();
-        body.insert("text", message);
+        let body = match in_reply_to_tweet_id {
+            Some(id) => json!({
+                "text": message,
+                "reply": {
+                    "in_reply_to_tweet_id": id,
+                }
+            }),
+            None => json!({
+                "text": message,
+            }),
+        };
+        self.args.debug(&body);
 
         // returns Result<Response>
         // https://docs.rs/reqwest/0.11.6/reqwest/blocking/struct.Response.html
