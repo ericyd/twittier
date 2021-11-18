@@ -18,8 +18,24 @@ fn parse(args: &BaseArgs) -> Args {
 }
 
 fn help() -> Result<(), TwitterError> {
-    println!("TODO: document");
-    println!("init");
+    println!(
+        "Initialize your credentials file!\n
+    Usage: tw init [OPTIONS]
+
+    Options:
+        -c, --credentials <name>
+            The file name or path to use for the credentials file.
+            Default: ~/.twitter_credentials.toml
+
+    Examples:
+        Read 10 tweets from your feed (default):
+            tw feed
+        Read 20 tweets from your feed:
+            tw feed 20
+        Read 1 tweet from your alt feed:
+            tw feed 1 -p alt1
+"
+    );
     Ok(())
 }
 
@@ -34,6 +50,7 @@ fn write_empty_credentials(path: &PathBuf) -> Result<(), TwitterError> {
         api_key_secret: "".to_string(),
         access_token: "".to_string(),
         access_token_secret: "".to_string(),
+        handle: "".to_string(),
     };
     let credentials_file = CredentialsFile {
         default: credentials,

@@ -12,7 +12,7 @@ use std::str::FromStr;
 #[derive(Debug)]
 pub struct BaseArgs {
     named: HashMap<String, String>,
-    positional: Vec<String>,
+    pub positional: Vec<String>,
     flags: HashMap<String, bool>,
     is_debug: bool,
 }

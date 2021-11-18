@@ -20,8 +20,26 @@ fn parse(args: &BaseArgs) -> Result<Args, TwitterError> {
 }
 
 fn help() -> Result<(), TwitterError> {
-    println!("TODO: document");
-    println!("delete");
+    println!(
+        "Delete a tweet!\n
+    Usage: tw delete tweet_id [OPTIONS]
+
+    Options:
+        -p, --profile <name>
+            The name of the profile to use.
+            Must correspond to an entry in your credentials file (~/.twitter_credentials.toml by default).
+        -c, --credentials <name>
+            The file name or path to use for the credentials file.
+            Default: ~/.twitter_credentials.toml
+        --debug
+            Print debug messages.
+
+    Examples:
+        Delete a single tweet:
+            tw delete 12345666
+        Delete a tweet from an alt account:
+            tw delete 12345666 --profile alt1
+");
     Ok(())
 }
 

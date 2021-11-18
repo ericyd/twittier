@@ -29,6 +29,7 @@ pub struct Credentials {
     pub api_key_secret: String,
     pub access_token: String,
     pub access_token_secret: String,
+    pub handle: String,
 }
 
 impl From<&Value> for Credentials {
@@ -42,6 +43,7 @@ impl From<&Value> for Credentials {
                     .as_str()
                     .unwrap_or("")
                     .to_string(),
+                handle: fields["handle"].as_str().unwrap_or("").to_string(),
             },
             _ => {
                 panic!("Credentials file not formatted correctly! Try using `tw init`")
@@ -65,6 +67,7 @@ fn is_any_empty(credentials: &Credentials) -> bool {
         || credentials.api_key_secret.is_empty()
         || credentials.access_token.is_empty()
         || credentials.access_token_secret.is_empty()
+        || credentials.handle.is_empty()
 }
 
 pub fn get(base_args: &BaseArgs) -> Result<Credentials, TwitterError> {
