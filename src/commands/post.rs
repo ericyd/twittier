@@ -4,12 +4,13 @@ use super::super::error::TwitterError;
 use super::super::twitter;
 
 struct Args {
-    message: Option<String>,
+    message: String,
 }
 
-fn parse(args: &BaseArgs) -> Args {
-    Args {
-        message: args.get_position::<String>(1),
+fn parse(args: &BaseArgs) -> Result<Args, TwitterError> {
+    match args.get_position::<String>(1) {
+        Some(message) if &message != "" => Ok(Args { message }),
+        _ => Err(TwitterError::MissingArgument("message".to_string())),
     }
 }
 
@@ -57,16 +58,11 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
     if base_args.is_requesting_help() {
         return help();
     }
-    let args = parse(&base_args);
+    let args = parse(&base_args)?;
     let credentials = credentials::get(base_args)?;
     base_args.debug(&credentials);
 
-    match args.message {
-        Some(message) if &message != "" => {
-            let response = twitter::Client::new(credentials, base_args).post_v2(&message)?;
-            println!("Posted tweet id: {}", response.id);
-            Ok(())
-        }
-        _ => Err(TwitterError::MissingArgument("message".to_string())),
-    }
+    let response = twitter::Client::new(credentials, base_args).post_v2(&args.message)?;
+    println!("Posted tweet id: {}", response.id);
+    Ok(())
 }

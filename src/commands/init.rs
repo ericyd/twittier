@@ -49,7 +49,7 @@ fn write_empty_credentials(path: &PathBuf) -> Result<(), TwitterError> {
         }
         Err(e) => {
             println!("Could not initialize credentials file!");
-            println!("Please ensure the credentials file path \"{:?}\" is a valid relative or absolute path name.", &path);
+            println!("Please ensure the credentials file path {:?} is a valid relative or absolute path name.", &path);
             Err(TwitterError::Io(e))
         }
     }
@@ -67,7 +67,7 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
         Ok(_) => match fs::read_to_string(&path) {
             Ok(contents) if contents != "" => {
                 println!(
-                    "🤨 Credentials file \"{:?}\" already exists and is non-empty!",
+                    "🤨 Credentials file {:?} already exists and is non-empty!",
                     &path
                 );
                 Ok(())
@@ -75,7 +75,7 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
             Ok(_) => write_empty_credentials(&path),
             Err(e) => {
                 println!("Could not initialize credentials file!");
-                println!("Please ensure the credentials file path \"{:?}\" is a valid relative or absolute path name.", &path);
+                println!("Please ensure the credentials file path {:?} is a valid relative or absolute path name.", &path);
                 Err(TwitterError::Io(e))
             }
         },

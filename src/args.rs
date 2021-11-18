@@ -1,8 +1,8 @@
-// AGAINST ALL ODDS, THIS WORKS.....
-// Why though?
-
-// ripgrep has a bunch of custom logic, I feel like this might be required
-// https://github.com/BurntSushi/ripgrep/blob/af54069c51cc3656c9c343a7fb3c9360cfddf505/crates/core/args.rs#L228-L250
+// Why write a custom argument parser?
+// Let me answer your question with a question:
+// Why is a muffin delicious?
+// Why is coal dirty?
+// Why is a cat hungry?
 
 use super::error::TwitterError;
 use std::collections::HashMap;
@@ -27,23 +27,17 @@ impl BaseArgs {
         let mut flags = HashMap::new();
         let mut positional = Vec::new();
 
-        // This is the ugliest shit, maybe consider cleaning it up...
         while i < args.len() {
             let arg = &args[i];
-            if arg.starts_with("--") {
-                let key = arg.trim_start_matches("--").to_string();
-                // If this argument is last in the list, or the next one is also a named arg, do not use next arg as value
-                let is_flag_arg = i + 1 >= args.len() || args[i + 1].starts_with("-");
-                if is_flag_arg {
-                    flags.insert(key, true);
-                    i += 1;
+            if arg.starts_with("-") {
+                let key = if arg.starts_with("--") {
+                    arg.trim_start_matches("--").to_string()
                 } else {
-                    named.insert(key, args[i + 1].to_string());
-                    i += 2;
+                    arg.trim_start_matches("-").to_string()
                 };
-            } else if arg.starts_with("-") {
-                let key = arg.trim_start_matches("-").to_string();
+
                 // If this argument is last in the list, or the next one is also a named arg, do not use next arg as value
+                // ... it might be smarter to just have a list of accepted flags, i.e. debug, help, version
                 let is_flag_arg = i + 1 >= args.len() || args[i + 1].starts_with("-");
                 if is_flag_arg {
                     flags.insert(key, true);
