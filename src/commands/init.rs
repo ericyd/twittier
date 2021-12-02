@@ -4,6 +4,21 @@ use super::super::error::TwitterError;
 use std::fs;
 use std::path::PathBuf;
 
+const HELP: &str = "Initialize your credentials file!\n
+Usage: tw init [OPTIONS]
+
+Options:
+    -c, --credentials <name>
+        The file name or path to use for the credentials file.
+        Default: ~/.twitter_credentials.toml
+
+Examples:
+    Initialize with default file path:
+        tw init
+    Initialize with custom file path:
+        tw init -c /path/to/credentials.toml
+";
+
 struct Args {
     credentials_file: String,
 }
@@ -18,24 +33,7 @@ fn parse(args: &BaseArgs) -> Args {
 }
 
 fn help() -> Result<(), TwitterError> {
-    println!(
-        "Initialize your credentials file!\n
-    Usage: tw init [OPTIONS]
-
-    Options:
-        -c, --credentials <name>
-            The file name or path to use for the credentials file.
-            Default: ~/.twitter_credentials.toml
-
-    Examples:
-        Read 10 tweets from your feed (default):
-            tw feed
-        Read 20 tweets from your feed:
-            tw feed 20
-        Read 1 tweet from your alt feed:
-            tw feed 1 -p alt1
-"
-    );
+    println!("{}", HELP);
     Ok(())
 }
 

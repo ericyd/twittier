@@ -3,6 +3,34 @@ use super::super::credentials;
 use super::super::error::TwitterError;
 use super::super::twitter;
 
+const HELP: &str = "Post a tweet!\n
+Usage: tw post message [...replies] [OPTIONS]
+
+Including replies will post a thread
+
+Options:
+    -r, --reply-id <id>
+        The ID of the tweet to reply to.
+    -p, --profile <name>
+        The name of the profile to use.
+        Must correspond to an entry in your credentials file (~/.twitter_credentials.toml by default).
+    -c, --credentials <name>
+        The file name or path to use for the credentials file.
+        Default: ~/.twitter_credentials.toml
+    --debug
+        Print debug messages.
+
+Examples:
+    Post a single tweet:
+        tw post \"I'll tell you what's up\"
+    Reply to an somebody's tweet:
+        tw post \"Emojis work too 🤩\" --reply-id 12345
+    Post a thread:
+        tw post \"I took out my wool sweater today and it made me want to THREAD\" \"#sweaterweather\" \"#unnecessarythreading\"
+    Post with an alt account:
+        tw post \"Hey y'all @ericydauenhauer is real\" --profile alt1
+";
+
 struct Args {
     messages: Vec<String>,
     in_reply_to_tweet_id: Option<String>,
@@ -21,35 +49,7 @@ fn parse(args: &BaseArgs) -> Result<Args, TwitterError> {
 }
 
 fn help() -> Result<(), TwitterError> {
-    println!(
-        "Post a tweet!\n
-    Usage: tw post message [...replies] [OPTIONS]
-
-    Including replies will post a thread
-
-    Options:
-        -r, --reply-id <id>
-            The ID of the tweet to reply to.
-        -p, --profile <name>
-            The name of the profile to use.
-            Must correspond to an entry in your credentials file (~/.twitter_credentials.toml by default).
-        -c, --credentials <name>
-            The file name or path to use for the credentials file.
-            Default: ~/.twitter_credentials.toml
-        --debug
-            Print debug messages.
-
-    Examples:
-        Post a single tweet:
-            tw post \"I'll tell you what's up\"
-        Reply to an somebody's tweet:
-            tw post \"Emojis work too 🤩\" --reply-id 12345
-        Post a thread:
-            tw post \"I took out my wool sweater today and it made me want to THREAD\" \"#sweaterweather\" \"#unnecessarythreading\"
-        Post with an alt account:
-            tw post \"Hey y'all @ericydauenhauer is real\" --profile alt1
-");
-
+    println!("{}", HELP);
     Ok(())
 }
 
