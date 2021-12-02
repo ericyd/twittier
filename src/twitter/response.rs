@@ -18,17 +18,17 @@ pub struct TwitterResponse<T> {
 
 #[derive(Deserialize, Debug)]
 pub struct TwitterUser {
-    id: u64,
-    id_str: String,
-    name: String,        // display name
+    // id: u64,
+    // id_str: String,
+    name: String, // display name
     screen_name: String, // handle
-    verified: bool,
+                  // verified: bool,
 }
 
 // This has basically everything that TwitterFeedItem has, but I don't want to deal with making a recursive structure work
 #[derive(Deserialize, Debug)]
 pub struct TwitterStatus {
-    id_str: String, // identical to id, but in String formaat
+    // id_str: String, // identical to id, but in String formaat
     text: String,
     user: TwitterUser,
 }
@@ -36,7 +36,7 @@ pub struct TwitterStatus {
 #[derive(Deserialize, Debug)]
 pub struct TwitterFeedItem {
     created_at: String, // format: "Wed Oct 10 20:19:24 +0000 2018",
-    id: u64,
+    // id: u64,
     id_str: String, // identical to id, but in String formaat
     text: String,
     user: TwitterUser,
@@ -44,10 +44,10 @@ pub struct TwitterFeedItem {
     favorite_count: i32,
     favorited: bool,
     retweeted: bool,
-    in_reply_to_status_id: Option<u64>,
+    // in_reply_to_status_id: Option<u64>,
     in_reply_to_status_id_str: Option<String>,
-    in_reply_to_user_id: Option<u64>,
-    in_reply_to_user_id_str: Option<String>,
+    // in_reply_to_user_id: Option<u64>,
+    // in_reply_to_user_id_str: Option<String>,
     in_reply_to_screen_name: Option<String>,
     retweeted_status: Option<TwitterStatus>,
 }

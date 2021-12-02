@@ -19,7 +19,6 @@ enum Command {
 }
 
 fn main() {
-    print_banner();
     // Pattern lifted wholesale from ripgrep ¯\_(ツ)_/¯
     // https://github.com/BurntSushi/ripgrep/blob/e6cac8b119d0d50646b3ba1aaf53e648c779901a/crates/core/main.rs#L48-L74
     if let Err(err) = BaseArgs::parse().and_then(try_main) {
@@ -35,10 +34,14 @@ fn try_main(args: BaseArgs) -> Result<(), error::TwitterError> {
         Command::Delete => commands::delete(&args),
         Command::Feed => commands::feed(&args),
         Command::Version => {
-            println!("🐤 v0.1.0");
+            print_banner();
+            println!("🐤 v1.0.0");
             Ok(())
         }
-        Command::Init => commands::init(&args),
+        Command::Init => {
+            print_banner();
+            commands::init(&args)
+        }
         Command::Help => print_help(),
     }
 }
@@ -72,13 +75,17 @@ fn command(args: &BaseArgs) -> Command {
 }
 
 fn print_help() -> Result<(), error::TwitterError> {
+    print_banner();
     println!(
-        "Usage: twitter [command] [options]
+        "Usage: tw [command] [options]
 
 Commands:
     post [message]
     tweet [message]
     delete [id]
+
+For help with specific commands, run:
+    tw [command] --help
 "
     );
 

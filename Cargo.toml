@@ -1,3 +1,5 @@
+cargo-features = ["strip"]
+
 [package]
 name = "twitter"
 version = "0.1.0"
@@ -15,10 +17,21 @@ name = "tw"
 toml = "0.5"
 home = "0.5.3"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0.61"
-reqwest = { version = "0.11", features = ["blocking", "json"] }
-# huh, crates.io says 2.1.0 is latest but I can't get that with cargo run
-urlencoding = "1.1.1"
+serde_json = "1.0.71"
+# Using Rust TLS instead of OpenSSL for easier cross-compilation https://github.com/rust-embedded/cross/issues/510
+reqwest = { version = "0.11", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+urlencoding = "2.1.0"
 base64 = "0.13.0"
-# https://docs.rs/hmac-sha1/0.1.3/hmacsha1/
 hmac-sha1 = "0.1.3"
+
+# https://github.com/briansmith/ring/commit/ace62da913f8d90bc45de2d5b216bd282b6f3006
+[build-dependencies]
+cc = { version = "1.0.69", default-features = false }
+
+# props to https://github.com/johnthagen/min-sized-rust for doing the heavy lifting on these settings
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"

@@ -12,6 +12,8 @@
 - [API](#api)
   - [`init`](#init)
   - [`post`](#post)
+    - [Posting a thread](#posting-a-thread)
+    - [Posting a multi-line tweet](#posting-a-multi-line-tweet)
     - [Using an alt profile](#using-an-alt-profile)
   - [`delete`](#delete)
   - [`feed`](#feed)
@@ -28,9 +30,10 @@
 
 - 🚀 Fastest Twitter client on the market<sup>1</sup>
 - 🤑 Absolutely free to use for live tweeting, doom scrolling, and more!
-- <img src="https://www.rust-lang.org/static/images/rust-logo-blk.svg" alt="rust logo" height="20px" /> Written in a language nobody cares about
+- <img src="https://www.rust-lang.org/static/images/rust-logo-blk.svg" alt="rust logo" height="20px" /> Written in a programming language nobody cares about
 - 😈 Supports multiple profiles so you can use your alts to troll with ease!
 - 🤓 Allows you to dick around at work while looking like you're doing some hard-code nerd work in the terminal!
+- 🥳 It kind of sucks to use Twitter via CLI so it will make you reduce your Twitter time -- less social, happier you!
 
 ## Comparison with twurl
 
@@ -85,6 +88,7 @@ Aliases
 
 Arguments
 * `message` (Required)
+* `replies` (Optional)
 * `-p`, `--profile` (Optional). Allows you to specify an alt account to use
 
 Examples
@@ -93,6 +97,19 @@ tw post "I might have poor grammar but so are you"
 tw tweet "Calamine lotion tastes funny"
 tw p 'Who took the cookies from the cookie jar? Twas me, bitches'
 ```
+
+#### Posting a thread
+
+Twittier has first-class threading support. Simply include multiple messages when calling `tw post` and it will automatically thread!
+
+Examples
+```bash
+tw post "i have OPINIONS" "you will LISTEN TO ME" "if you don't there will be DIRE CONSEQUENCES"
+```
+
+#### Posting a multi-line tweet
+
+Sometimes you want some whitespace in your thread, like extra lines and stuff. Well too bad, asshole! It isn't supported yet.
 
 #### Using an alt profile
 
@@ -170,12 +187,14 @@ tw --help
 
 * `--debug`: Prints a bunch of extra info
 * `help`, `--help`, `-h`: Include with another argument to get specific help message for that command.
+* `-c`, `--credentials`: If you prefer for some bizarre reason to customize the location of your credentials file, you'll have to specify this flag every time
 
 ```bash
 tw post "fuck fuck fuck fuck fuck fuck fuck fuck fuck fuck fuck fuck donald trump" --debug
 tw post -h
 tw feed --help
 tw init help
+tw init -c /path/to/custom/file.toml
 ```
 
 ## Building from source
@@ -208,3 +227,7 @@ Be sure to generate an access token and secret after you update your app to have
 
 - <sup>1</sup>This has never been, and will never be, measured
 - <sup>2</sup>Non-functional Tweets
+
+---
+
+Follow me [@ericydauenhauer](https://twitter.com/ericydauenhauer) for good times
