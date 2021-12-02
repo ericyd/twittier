@@ -55,6 +55,7 @@
 
 1. Download executable from [the releases page](https://github.com/ericyd/twitter/releases)
 2. Initialize your credentials file: `tw init`
+    * If you are on Mac, your computer will try to keep you safe by saying the program is malwaare. After it prompts you to move it to the trash, click "cancel" and immediately open System Preferences > Security & Privacy. Click the button that says "Allow" next to the program name to allow your computer to run it.
 3. [Create a developer account](https://developer.twitter.com/en/docs/twitter-api). Then create an app. Then grant it write permissions. Then generate an access token and secret. (This is a [better guide than I would write](https://dev.to/sumedhpatkar/beginners-guide-how-to-apply-for-a-twitter-developer-account-1kh7))
 4. Copy/paste your API key, API secret, Access token, and Access token secret into your `~/.twitter_credentials.toml` file
 5. See what's new: `tw feed`
@@ -227,6 +228,34 @@ Be sure to generate an access token and secret after you update your app to have
 
 - <sup>1</sup>This has never been, and will never be, measured
 - <sup>2</sup>Non-functional Tweets
+
+## Building
+
+Building requires the nightly toolchain for the `strip` feature
+
+```bash
+# Build
+cargo +nightly build --release
+
+# Or, if cargo wasn't installed with Rustup, invoke directly with
+rustup run nightly cargo build --release
+
+# Or, set as default
+rustup default +nightly
+
+ls -l ./target/release/tw
+```
+
+## Releasing
+
+Turns out cross-compiling is quite hard locally so just use GitHub Actions - its free!
+
+```bash
+# cut tag
+git tag 1.0.0 -s
+# you're done, GH Actions does the rest 🙌
+git push --tags
+```
 
 ---
 
