@@ -67,7 +67,7 @@ Or as shell commands:
 ```bash
 curl -L https://github.com/ericyd/twittier/releases/download/1.0.0/twittier-1.0.0-linux.zip > twittier-1.0.0-linux.zip
 unzip twittier-1.0.0-linux.zip
-ln -s "$(pwd)/twittier-1.0.0-linux/tw" /usr/local/bin/tw2
+ln -s "$(pwd)/twittier-1.0.0-linux/tw" /usr/local/bin/tw
 tw init
 vi ~/.twitter_credentials.toml
 # insert credentials ^
