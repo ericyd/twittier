@@ -21,6 +21,7 @@
   - [`help`](#help)
   - [Global arguments](#global-arguments)
 - [Building from source](#building-from-source)
+- [Releasing](#releasing)
 - [Troubleshooting](#troubleshooting)
   - [I am getting authentication errors](#i-am-getting-authentication-errors)
 - [Acknowledgements](#acknowledgements)
@@ -60,6 +61,18 @@
 4. Copy/paste your API key, API secret, Access token, and Access token secret into your `~/.twitter_credentials.toml` file
 5. See what's new: `tw feed`
 6. Add to the conversation `tw post "new phone who dis"`
+
+Or as shell commands:
+
+```bash
+curl -L https://github.com/ericyd/twittier/releases/download/1.0.0/twittier-1.0.0-linux.zip > twittier-1.0.0-linux.zip
+unzip twittier-1.0.0-linux.zip
+ln -s "$(pwd)/twittier-1.0.0-linux/tw" /usr/local/bin/tw2
+tw init
+vi ~/.twitter_credentials.toml
+# insert credentials ^
+tw feed
+```
 
 ## API
 
@@ -200,18 +213,42 @@ tw init -c /path/to/custom/file.toml
 
 ## Building from source
 
-Install [Rust and Cargo](https://www.rust-lang.org/learn/get-started)
+1. Install [Rust and Cargo](https://www.rust-lang.org/learn/get-started)
+2. Set nightly toolchain (required for the `strip` feature)
+
+```bash
+rustup default +nightly
+```
+
+3. Clone and build
 
 ```bash
 # Clone repo as needed
 git clone https://github.com/ericyd/twittier && cd twittier
 
-# Build and create link
+# Build
 cargo build --release
+# or, if you don't use nightly as your default toolchain
+cargo +nightly build --release
+# Or, if cargo wasn't installed with Rustup, invoke directly
+rustup run nightly cargo build --release
+
+# create link
 ln -s "$(pwd)/target/release/tw" /usr/local/bin/tw
 
-# Use
+# Use it
 tw -h
+```
+
+## Releasing
+
+Turns out cross-compiling is quite hard locally so just use GitHub Actions - its free!
+
+```bash
+# cut tag
+git tag 1.0.0 -s
+# you're done, GH Actions does the rest 🙌
+git push --tags
 ```
 
 ## Troubleshooting
@@ -228,34 +265,6 @@ Be sure to generate an access token and secret after you update your app to have
 
 - <sup>1</sup>This has never been, and will never be, measured
 - <sup>2</sup>Non-functional Tweets
-
-## Building
-
-Building requires the nightly toolchain for the `strip` feature
-
-```bash
-# Build
-cargo +nightly build --release
-
-# Or, if cargo wasn't installed with Rustup, invoke directly with
-rustup run nightly cargo build --release
-
-# Or, set as default
-rustup default +nightly
-
-ls -l ./target/release/tw
-```
-
-## Releasing
-
-Turns out cross-compiling is quite hard locally so just use GitHub Actions - its free!
-
-```bash
-# cut tag
-git tag 1.0.0 -s
-# you're done, GH Actions does the rest 🙌
-git push --tags
-```
 
 ---
 
