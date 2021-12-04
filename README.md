@@ -35,6 +35,7 @@
 - 😈 Supports multiple profiles so you can use your alts to troll with ease!
 - 🤓 Allows you to dick around at work while looking like you're doing some hard-code nerd work in the terminal!
 - 🥳 It kind of sucks to use Twitter via CLI so it will make you reduce your Twitter time -- less social, happier you!
+- 🧠 Name is a portmanteau of "wittier" and "Twitter"
 
 ## Comparison with twurl
 
