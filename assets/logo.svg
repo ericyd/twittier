@@ -222,7 +222,7 @@
        aria-label="NEXT-GEN
 SOCIAL INTERFACE"
        id="text16"
-       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583">
+       style="font-style:normal;font-weight:normal;font-size:10.5833px;line-height:1.25;font-family:sans-serif;fill:currentColor;fill-opacity:1;stroke:none;stroke-width:0.264583">
       <path
          d="m 68.877355,56.732027 -1.085205,5.568652 -4.347022,-5.729883 h -0.186035 l -1.984375,10.194727 h 2.058789 l 1.079004,-5.574854 4.359424,5.748487 h 0.179834 l 1.984375,-10.207129 z"
          style="stroke-width:0.264583"
