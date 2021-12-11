@@ -67,3 +67,9 @@ impl From<reqwest::Error> for TwitterError {
         TwitterError::Api(message.to_string())
     }
 }
+
+impl From<serde_json::Error> for TwitterError {
+    fn from(message: serde_json::Error) -> TwitterError {
+        TwitterError::Api(message.to_string())
+    }
+}

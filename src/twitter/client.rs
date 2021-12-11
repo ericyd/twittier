@@ -69,8 +69,9 @@ impl<'c> Client<'c> {
         // Possible to use match on the enum if desired
         // https://docs.rs/reqwest/0.11.6/reqwest/struct.StatusCode.html#impl-1
         if res.status().is_success() {
-            let json: TwitterResponse<TwitterCreateResponseData> = res.json()?;
-            self.args.debug(&json);
+            let text = res.text()?;
+            self.args.debug(&text);
+            let json: TwitterResponse<TwitterCreateResponseData> = serde_json::from_str(&text)?;
             Ok(json.data)
         } else {
             Err(self.error(res))
@@ -96,8 +97,9 @@ impl<'c> Client<'c> {
         self.args.debug(&res);
 
         if res.status().is_success() {
-            let json: TwitterResponse<TwitterDeleteResponseData> = res.json()?;
-            self.args.debug(&json);
+            let text = res.text()?;
+            self.args.debug(&text);
+            let json: TwitterResponse<TwitterDeleteResponseData> = serde_json::from_str(&text)?;
             Ok(json.data)
         } else {
             Err(self.error(res))
@@ -128,9 +130,9 @@ impl<'c> Client<'c> {
         self.args.debug(&res);
 
         if res.status().is_success() {
-            // self.args.debug(res.text()?);
-            // Ok(vec![])
-            let json: TwitterFeed = res.json()?;
+            let text = res.text()?;
+            self.args.debug(&text);
+            let json: TwitterFeed = serde_json::from_str(&text)?;
             Ok(json)
         } else {
             Err(self.error(res))
