@@ -3,12 +3,8 @@ use super::super::credentials;
 use super::super::error::TwitterError;
 use super::super::twitter;
 
-const HELP: &str = "Read your feed!\n
-Usage: tw feed [count] [OPTIONS]
-
-Arguments
-    count (default: 10):
-        integer between 1 and 100.
+const HELP: &str = "Get some details about yourself!\n
+Usage: tw me [OPTIONS]
 
 Options:
     -p, --profile <name>
@@ -21,25 +17,11 @@ Options:
         Print debug messages.
 
 Examples:
-    Read 10 tweets from your feed (default):
-        tw feed
-    Read 20 tweets from your feed:
-        tw feed 20
-    Read 1 tweet from your alt feed:
-        tw feed 1 -p alt1
+    Get your user summary:
+        tw me
+    Get user summary from your alt home:
+        tw me -p alt1
 ";
-
-struct Args {
-    count: i32,
-}
-
-fn parse(args: &BaseArgs) -> Args {
-    let count = match args.get_position::<String>(1) {
-        Some(count) => count.parse::<i32>().unwrap(),
-        None => 10,
-    };
-    Args { count }
-}
 
 fn help() -> Result<(), TwitterError> {
     println!("{}", HELP);
@@ -50,15 +32,12 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
     if base_args.is_requesting_help() {
         return help();
     }
-    let args = parse(&base_args);
     let credentials = credentials::get(base_args)?;
     base_args.debug(&credentials);
 
-    let feed = twitter::Client::new(&credentials, base_args).feed(args.count)?;
+    let me = twitter::Client::new(&credentials, base_args).me()?;
 
-    for item in feed {
-        item.display();
-    }
+    me.display();
 
     Ok(())
 }

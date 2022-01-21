@@ -3,12 +3,12 @@ use super::super::credentials;
 use super::super::error::TwitterError;
 use super::super::twitter;
 
-const HELP: &str = "Read your feed!\n
-Usage: tw feed [count] [OPTIONS]
+const HELP: &str = "See your most recent tweets!\n
+Usage: tw home [count] [OPTIONS]
 
 Arguments
     count (default: 10):
-        integer between 1 and 100.
+        integer between 5 and 100.
 
 Options:
     -p, --profile <name>
@@ -21,12 +21,12 @@ Options:
         Print debug messages.
 
 Examples:
-    Read 10 tweets from your feed (default):
-        tw feed
-    Read 20 tweets from your feed:
-        tw feed 20
-    Read 1 tweet from your alt feed:
-        tw feed 1 -p alt1
+    Read your last 10 tweets (default):
+        tw home
+    Read your last 20 tweets:
+        tw home 20
+    Read your last 5 tweets from your alt profile:
+        tw home 5 -p alt1
 ";
 
 struct Args {
@@ -51,12 +51,18 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
         return help();
     }
     let args = parse(&base_args);
+    if args.count < 5 || args.count > 100 {
+        return Err(TwitterError::Invalid(
+            "Count must be between 5 and 100".to_string(),
+        ));
+    }
     let credentials = credentials::get(base_args)?;
     base_args.debug(&credentials);
 
-    let feed = twitter::Client::new(&credentials, base_args).feed(args.count)?;
+    let me = twitter::Client::new(&credentials, base_args).me()?;
+    let home = twitter::Client::new(&credentials, base_args).home_v2(&me.id, args.count)?;
 
-    for item in feed {
+    for item in home {
         item.display();
     }
 

@@ -52,7 +52,7 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
     let credentials = credentials::get(base_args)?;
     base_args.debug(&credentials);
 
-    let response = twitter::Client::new(credentials, base_args).delete_v2(&args.id)?;
+    let response = twitter::Client::new(&credentials, base_args).delete_v2(&args.id)?;
     if response.deleted == true {
         println!("Deleted tweet id: {}", args.id);
         Ok(())

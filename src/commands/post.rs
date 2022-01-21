@@ -96,7 +96,7 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
     base_args.debug(&credentials);
     let handle = String::from(&credentials.handle);
 
-    let client = twitter::Client::new(credentials, base_args);
+    let client = twitter::Client::new(&credentials, base_args);
     let mut response = client.post_v2(&args.messages[0], &args.in_reply_to_tweet_id)?;
     let first_tweet_id = String::from(&response.id);
     println!(

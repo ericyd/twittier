@@ -1,10 +1,13 @@
 use super::super::args::BaseArgs;
 use super::super::credentials::Credentials;
 use super::super::error::TwitterError;
+use super::OauthResponse;
 use super::TwitterCreateResponseData;
 use super::TwitterDeleteResponseData;
 use super::TwitterFeed;
+use super::TwitterHomeItem;
 use super::TwitterResponse;
+use super::TwitterUser;
 use serde_json::json;
 use std::time::{SystemTime, UNIX_EPOCH};
 use urlencoding::encode;
@@ -12,13 +15,13 @@ use urlencoding::encode;
 type ParameterList<'a> = &'a [(&'a str, String)];
 
 pub struct Client<'c> {
-    credentials: Credentials,
+    credentials: &'c Credentials,
     client: reqwest::blocking::Client,
     args: &'c BaseArgs,
 }
 
 impl<'c> Client<'c> {
-    pub fn new(credentials: Credentials, args: &'c BaseArgs) -> Self {
+    pub fn new(credentials: &'c Credentials, args: &'c BaseArgs) -> Self {
         // Async is obviously the cooler way but I know nothing about Rust Futures and it felt out of scope for this stage. From the reqwest docs:
         // "For applications wishing to only make a few HTTP requests, the reqwest::blocking API may be more convenient."
         // https://docs.rs/reqwest/0.11.6/reqwest/blocking/index.html
@@ -134,6 +137,81 @@ impl<'c> Client<'c> {
             self.args.debug(&text);
             let json: TwitterFeed = serde_json::from_str(&text)?;
             Ok(json)
+        } else {
+            Err(self.error(res))
+        }
+    }
+
+    pub fn me(&self) -> Result<TwitterUser, TwitterError> {
+        self.args.debug(&format!("Fetching my user data"));
+
+        let base_url = format!("https://api.twitter.com/2/users/me");
+        let authorization = self.build_authorization("GET", &base_url, None);
+
+        let req = self
+            .client
+            .get(&base_url)
+            .header("Authorization", authorization);
+        self.args.debug(&req);
+
+        let res = req.send()?;
+        self.args.debug(&res);
+
+        if res.status().is_success() {
+            let text = res.text()?;
+            self.args.debug(&text);
+            let json: TwitterResponse<TwitterUser> = serde_json::from_str(&text)?;
+            Ok(json.data)
+        } else {
+            Err(self.error(res))
+        }
+    }
+
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/timelines/api-reference/get-users-id-tweets
+    pub fn home_v2(
+        &self,
+        user_id: &String,
+        count: i32,
+    ) -> Result<Vec<TwitterHomeItem>, TwitterError> {
+        self.args
+            .debug(&format!("Fetching home with count: {}", count));
+
+        let base_url = format!("https://api.twitter.com/2/users/{}/tweets?max_results={}&tweet.fields=created_at,author_id,public_metrics", user_id, count);
+
+        let req = self.client.get(&base_url).bearer_auth(self.bearer_token()?);
+        self.args.debug(&req);
+
+        let res = req.send()?;
+        self.args.debug(&res);
+
+        if res.status().is_success() {
+            let text = res.text()?;
+            self.args.debug(&text);
+            let json: TwitterResponse<Vec<TwitterHomeItem>> = serde_json::from_str(&text)?;
+            Ok(json.data)
+        } else {
+            Err(self.error(res))
+        }
+    }
+
+    // https://developer.twitter.com/en/docs/authentication/api-reference/token
+    fn bearer_token(&self) -> Result<String, TwitterError> {
+        self.args.debug(&format!("Fetching Oauth Bearer token"));
+
+        let base_url = "https://api.twitter.com/oauth2/token?grant_type=client_credentials";
+        let req = self.client.post(base_url).basic_auth(
+            &self.credentials.api_key,
+            Some(&self.credentials.api_key_secret),
+        );
+        self.args.debug(&req);
+        let res = req.send()?;
+        self.args.debug(&res);
+
+        if res.status().is_success() {
+            let text = res.text()?;
+            self.args.debug(&text);
+            let json: OauthResponse = serde_json::from_str(&text)?;
+            Ok(json.access_token)
         } else {
             Err(self.error(res))
         }

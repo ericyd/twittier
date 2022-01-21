@@ -23,9 +23,12 @@ const HELP: &str = "Usage: tw [command] [options]
 
 Commands:
     init
+    me
     post [message]
     tweet [message]
     delete [id]
+    feed [count]
+    home [count]
     help, -h, --help
     version, -v, --version
 
@@ -44,9 +47,11 @@ use args::BaseArgs;
 enum Command {
     Help,
     Version,
+    Me,
     Tweet,
     Delete,
     Feed,
+    Home,
     Init,
 }
 
@@ -65,6 +70,8 @@ fn try_main(args: BaseArgs) -> Result<(), error::TwitterError> {
         Command::Tweet => commands::post(&args),
         Command::Delete => commands::delete(&args),
         Command::Feed => commands::feed(&args),
+        Command::Home => commands::home(&args),
+        Command::Me => commands::me(&args),
         Command::Version => {
             print_banner();
             println!("🐤 v1.0.0");
@@ -86,6 +93,8 @@ fn command(args: &BaseArgs) -> Command {
             "tweet" => Command::Tweet,
             "delete" => Command::Delete,
             "feed" => Command::Feed,
+            "home" => Command::Home,
+            "me" => Command::Me,
             "init" => Command::Init,
             "help" => Command::Help,
             "version" => Command::Version,

@@ -10,6 +10,7 @@ pub enum TwitterError {
     Parse(TomlDeserializeError),
     Serialize(TomlSerializeError),
     MissingArgument(String),
+    Invalid(String),
     ProfileNotFound(String),
     Api(String),
 }
@@ -22,6 +23,7 @@ impl fmt::Display for TwitterError {
             TwitterError::Parse(ref cause) => write!(f, "Error parsing file: {}", cause),
             TwitterError::Serialize(ref cause) => write!(f, "Error writing file: {}", cause),
             TwitterError::MissingArgument(ref arg) => write!(f, "Missing argument: {}", arg),
+            TwitterError::Invalid(ref arg) => write!(f, "Invalid argument: {}", arg),
             TwitterError::ProfileNotFound(ref arg) => {
                 write!(f, "Profile not found in credentials file: {}", arg)
             }

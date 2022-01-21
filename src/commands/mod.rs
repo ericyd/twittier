@@ -9,3 +9,9 @@ pub use init::execute as init;
 
 pub mod feed;
 pub use feed::execute as feed;
+
+pub mod home;
+pub use self::home::execute as home;
+
+pub mod me;
+pub use me::execute as me;

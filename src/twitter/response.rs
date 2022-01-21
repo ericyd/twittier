@@ -17,7 +17,7 @@ pub struct TwitterResponse<T> {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct TwitterUser {
+pub struct TwitterFeedUser {
     // id: u64,
     // id_str: String,
     name: String, // display name
@@ -30,7 +30,7 @@ pub struct TwitterUser {
 pub struct TwitterStatus {
     // id_str: String, // identical to id, but in String formaat
     text: String,
-    user: TwitterUser,
+    user: TwitterFeedUser,
 }
 
 #[derive(Deserialize, Debug)]
@@ -39,7 +39,7 @@ pub struct TwitterFeedItem {
     // id: u64,
     id_str: String, // identical to id, but in String formaat
     text: String,
-    user: TwitterUser,
+    user: TwitterFeedUser,
     retweet_count: i32,
     favorite_count: i32,
     favorited: bool,
@@ -106,3 +106,61 @@ impl TwitterFeedItem {
 }
 
 pub type TwitterFeed = Vec<TwitterFeedItem>;
+
+#[derive(Deserialize, Debug)]
+pub struct PublicMetrics {
+    retweet_count: usize,
+    reply_count: usize,
+    like_count: usize,
+    quote_count: usize,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TwitterHomeItem {
+    text: String,
+    id: String,
+    public_metrics: PublicMetrics,
+    created_at: String,
+    author_id: String,
+}
+
+impl TwitterHomeItem {
+    pub fn display(&self) {
+        println!("---------------------------------\n");
+        println!("{}\n", self.text);
+
+        // Get those stats
+        println!(
+            "{} Replies      {} Retweets      {} Quotes      {} Likes\n",
+            self.public_metrics.reply_count,
+            self.public_metrics.retweet_count,
+            self.public_metrics.quote_count,
+            self.public_metrics.like_count,
+        );
+
+        println!(
+            "https://twitter.com/{}/status/{}\n{}\n",
+            self.author_id, self.id, self.created_at
+        );
+    }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TwitterUser {
+    pub id: String,
+    username: String,
+    name: String,
+}
+
+impl TwitterUser {
+    pub fn display(&self) {
+        println!("id: {}", self.id);
+        println!("username: {}", self.username);
+        println!("name: {}", self.name);
+    }
+}
+
+#[derive(Deserialize, Debug)]
+pub struct OauthResponse {
+    pub access_token: String,
+}
