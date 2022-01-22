@@ -74,7 +74,13 @@ fn try_main(args: BaseArgs) -> Result<(), error::TwitterError> {
         Command::Me => commands::me(&args),
         Command::Version => {
             print_banner();
-            println!("🐤 v{}", env!("CARGO_PKG_VERSION"));
+            // Do we have a git hash?
+            // (Yes, if binary was built on a machine with `git` installed - see build.rs)
+            let hash = match option_env!("BUILD_GIT_HASH") {
+                None => String::new(),
+                Some(githash) => format!(" (revision {})", githash),
+            };
+            println!("🐤 v{} {}", env!("CARGO_PKG_VERSION"), hash);
             Ok(())
         }
         Command::Init => {
