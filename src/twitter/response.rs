@@ -20,9 +20,9 @@ pub struct TwitterResponse<T> {
 pub struct TwitterFeedUser {
     // id: u64,
     // id_str: String,
-    name: String, // display name
+    // verified: bool,
+    name: String,        // display name
     screen_name: String, // handle
-                  // verified: bool,
 }
 
 // This has basically everything that TwitterFeedItem has, but I don't want to deal with making a recursive structure work
@@ -31,6 +31,30 @@ pub struct TwitterStatus {
     // id_str: String, // identical to id, but in String formaat
     text: String,
     user: TwitterFeedUser,
+}
+
+/* Example TwitterFeedMedia:
+{
+    "id": 1466916840043597832,
+    "id_str": "1466916840043597832",
+    "media_url": "http://pbs.twimg.com/media/FFuJGA3WUAgIBQk.jpg",
+    "media_url_https": "https://pbs.twimg.com/media/FFuJGA3WUAgIBQk.jpg",
+    "url": "https://t.co/VlNglGCf0Q",
+    "display_url": "pic.twitter.com/VlNglGCf0Q",
+    "expanded_url": "https://twitter.com/onwrd_/status/1466916844162498562/photo/1",
+    "type": "photo",
+    ...
+}
+*/
+#[derive(Deserialize, Debug)]
+pub struct TwitterFeedMedia {
+    r#type: String, // have to escape it b/c type is a keyword
+    media_url: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct TwitterFeedEntities {
+    media: Option<Vec<TwitterFeedMedia>>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -50,6 +74,7 @@ pub struct TwitterFeedItem {
     // in_reply_to_user_id_str: Option<String>,
     in_reply_to_screen_name: Option<String>,
     retweeted_status: Option<TwitterStatus>,
+    entities: TwitterFeedEntities,
 }
 
 impl TwitterFeedItem {
@@ -86,6 +111,16 @@ impl TwitterFeedItem {
         match self.retweeted_status {
             Some(ref retweeted_status) => println!("{}", retweeted_status.text),
             None => println!("{}", self.text),
+        };
+
+        match self.entities.media {
+            Some(ref media) => {
+                println!("");
+                for (i, item) in media.iter().enumerate() {
+                    println!("{} {}: {}", item.r#type, i + 1, item.media_url);
+                }
+            }
+            None => (),
         };
 
         // Get those stats
