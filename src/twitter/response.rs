@@ -150,13 +150,23 @@ pub struct TwitterUser {
     pub id: String,
     username: String,
     name: String,
+    created_at: String,
+    pinned_tweet_id: Option<String>,
 }
 
 impl TwitterUser {
     pub fn display(&self) {
-        println!("id: {}", self.id);
-        println!("username: {}", self.username);
-        println!("name: {}", self.name);
+        println!("             ID: {}", self.id);
+        println!("       Username: {}", self.username);
+        println!("   Display name: {}", self.name);
+        println!("Account created: {}", self.created_at);
+        match self.pinned_tweet_id {
+            Some(ref pinned_tweet_id) => println!(
+                "   Pinned tweet: https://twitter.com/{}/status/{}",
+                self.username, pinned_tweet_id
+            ),
+            None => (),
+        };
     }
 }
 

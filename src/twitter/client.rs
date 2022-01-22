@@ -120,12 +120,13 @@ impl<'c> Client<'c> {
         let base_url = "https://api.twitter.com/1.1/statuses/home_timeline.json";
         let params = &[("count", count.to_string())];
         let authorization = self.build_authorization("GET", base_url, Some(params));
+        let full_url = format!("{}?count={}", base_url, count);
 
         // returns Result<Response>
         // https://docs.rs/reqwest/0.11.6/reqwest/blocking/struct.Response.html
         let req = self
             .client
-            .get(&format!("{}?count={}", base_url, count))
+            .get(&full_url)
             .header("Authorization", authorization);
         self.args.debug(&req);
 
@@ -142,15 +143,28 @@ impl<'c> Client<'c> {
         }
     }
 
+    // https://developer.twitter.com/en/docs/twitter-api/users/lookup/api-reference/get-users-me
+    // This method does not allow Bearer token (Oauth 2) authentication
     pub fn me(&self) -> Result<TwitterUser, TwitterError> {
         self.args.debug(&format!("Fetching my user data"));
 
         let base_url = format!("https://api.twitter.com/2/users/me");
-        let authorization = self.build_authorization("GET", &base_url, None);
+        let authorization = self.build_authorization(
+            "GET",
+            &base_url,
+            Some(&[
+                ("expansions", "pinned_tweet_id".to_string()),
+                ("user.fields", "created_at".to_string()),
+            ]),
+        );
+        let full_url = format!(
+            "{}?expansions=pinned_tweet_id&user.fields=created_at",
+            base_url
+        );
 
         let req = self
             .client
-            .get(&base_url)
+            .get(&full_url)
             .header("Authorization", authorization);
         self.args.debug(&req);
 
