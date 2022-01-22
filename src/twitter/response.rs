@@ -138,6 +138,7 @@ impl TwitterHomeItem {
             self.public_metrics.like_count,
         );
 
+        println!("id: {}", self.id);
         println!(
             "https://twitter.com/{}/status/{}\n{}\n",
             self.author_id, self.id, self.created_at
