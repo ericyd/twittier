@@ -74,7 +74,7 @@ fn try_main(args: BaseArgs) -> Result<(), error::TwitterError> {
         Command::Me => commands::me(&args),
         Command::Version => {
             print_banner();
-            println!("🐤 v1.0.0");
+            println!("🐤 v{}", env!("CARGO_PKG_VERSION"));
             Ok(())
         }
         Command::Init => {
