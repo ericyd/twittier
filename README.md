@@ -16,6 +16,10 @@
     - [Posting a multi-line tweet](#posting-a-multi-line-tweet)
     - [Using an alt profile](#using-an-alt-profile)
   - [`delete`](#delete)
+  - [`like`](#like)
+  - [`unlike`](#unlike)
+  - [`home`](#home)
+  - [`me`](#me)
   - [`feed`](#feed)
   - [`version`](#version)
   - [`help`](#help)
@@ -162,6 +166,53 @@ Examples
 tw delete 123456
 ```
 
+### `like`
+
+Like a tweet
+
+Arguments
+* `tweet_id` (Required)
+
+Examples
+```bash
+tw like 123456
+```
+
+### `unlike`
+
+Unlike a tweet
+
+Arguments
+* `tweet_id` (Required)
+
+Examples
+```bash
+tw unlike 123456
+```
+
+### `home`
+
+Read your recently posted tweets (good for the ego)
+
+Arguments
+* `count` (Optional)
+    * Must be between 5 and 100
+
+Examples
+```bash
+tw home
+tw home 42
+```
+
+### `me`
+
+Get some info about yourself
+
+Examples
+```bash
+tw me
+```
+
 ### `feed`
 
 See what people are saying about you
@@ -244,6 +295,8 @@ tw -h
 ## Releasing
 
 Turns out cross-compiling is quite hard locally so just use GitHub Actions - its free!
+
+Oh but be sure to [bump the version first](./Cargo.toml)
 
 ```bash
 # cut tag
