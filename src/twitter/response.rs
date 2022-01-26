@@ -210,3 +210,8 @@ impl TwitterUser {
 pub struct OauthResponse {
     pub access_token: String,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct TwitterLikeResponseData {
+    pub liked: bool,
+}

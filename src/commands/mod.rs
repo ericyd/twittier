@@ -15,3 +15,7 @@ pub use self::home::execute as home;
 
 pub mod me;
 pub use me::execute as me;
+
+pub mod like;
+pub use like::execute_like as like;
+pub use like::execute_unlike as unlike;

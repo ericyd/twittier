@@ -6,6 +6,7 @@ use super::TwitterCreateResponseData;
 use super::TwitterDeleteResponseData;
 use super::TwitterFeed;
 use super::TwitterHomeItem;
+use super::TwitterLikeResponseData;
 use super::TwitterResponse;
 use super::TwitterUser;
 use serde_json::json;
@@ -202,6 +203,73 @@ impl<'c> Client<'c> {
             let text = res.text()?;
             self.args.debug(&text);
             let json: TwitterResponse<Vec<TwitterHomeItem>> = serde_json::from_str(&text)?;
+            Ok(json.data)
+        } else {
+            Err(self.error(res))
+        }
+    }
+
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/likes/api-reference/post-users-id-likes
+    pub fn like_v2(
+        &self,
+        user_id: &String,
+        tweet_id: &String,
+    ) -> Result<TwitterLikeResponseData, TwitterError> {
+        self.args.debug(&format!("Liking tweet: {}", tweet_id));
+
+        let base_url = format!("https://api.twitter.com/2/users/{}/likes", user_id);
+        let authorization = self.build_authorization("POST", &base_url, None);
+        let body = json!({
+            "tweet_id": tweet_id,
+        });
+
+        let req = self
+            .client
+            .post(&base_url)
+            .header("Authorization", authorization)
+            .json(&body);
+        self.args.debug(&req);
+
+        let res = req.send()?;
+        self.args.debug(&res);
+
+        if res.status().is_success() {
+            let text = res.text()?;
+            self.args.debug(&text);
+            let json: TwitterResponse<TwitterLikeResponseData> = serde_json::from_str(&text)?;
+            Ok(json.data)
+        } else {
+            Err(self.error(res))
+        }
+    }
+
+    // https://developer.twitter.com/en/docs/twitter-api/tweets/likes/api-reference/delete-users-id-likes-tweet_id
+    pub fn unlike_v2(
+        &self,
+        user_id: &String,
+        tweet_id: &String,
+    ) -> Result<TwitterLikeResponseData, TwitterError> {
+        self.args.debug(&format!("Liking tweet: {}", tweet_id));
+
+        let base_url = format!(
+            "https://api.twitter.com/2/users/{}/likes/{}",
+            user_id, tweet_id
+        );
+        let authorization = self.build_authorization("DELETE", &base_url, None);
+
+        let req = self
+            .client
+            .delete(&base_url)
+            .header("Authorization", authorization);
+        self.args.debug(&req);
+
+        let res = req.send()?;
+        self.args.debug(&res);
+
+        if res.status().is_success() {
+            let text = res.text()?;
+            self.args.debug(&text);
+            let json: TwitterResponse<TwitterLikeResponseData> = serde_json::from_str(&text)?;
             Ok(json.data)
         } else {
             Err(self.error(res))

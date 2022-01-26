@@ -27,6 +27,8 @@ Commands:
     post [message]
     tweet [message]
     delete [id]
+    like [id]
+    unlike [id]
     feed [count]
     home [count]
     help, -h, --help
@@ -53,6 +55,8 @@ enum Command {
     Feed,
     Home,
     Init,
+    Like,
+    Unlike,
 }
 
 fn main() {
@@ -72,6 +76,8 @@ fn try_main(args: BaseArgs) -> Result<(), error::TwitterError> {
         Command::Feed => commands::feed(&args),
         Command::Home => commands::home(&args),
         Command::Me => commands::me(&args),
+        Command::Like => commands::like(&args),
+        Command::Unlike => commands::unlike(&args),
         Command::Version => {
             print_banner();
             // Do we have a git hash?
@@ -98,6 +104,8 @@ fn command(args: &BaseArgs) -> Command {
             "p" => Command::Tweet,
             "tweet" => Command::Tweet,
             "delete" => Command::Delete,
+            "like" => Command::Like,
+            "unlike" => Command::Unlike,
             "feed" => Command::Feed,
             "home" => Command::Home,
             "me" => Command::Me,
