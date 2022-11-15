@@ -209,12 +209,14 @@ Arguments
 
 - `count` (Optional)
   - Must be between 5 and 100
+- `dump` (Optional) writes the raw JSON response to a file
 
 Examples
 
 ```bash
 tw home
 tw home 42
+tw home 42 --dump
 ```
 
 ### `me`
@@ -234,6 +236,7 @@ See what people are saying about you
 Arguments
 
 - `count` (Optional)
+- `dump` (Optional) writes the raw JSON response to a file
 
 Examples
 
@@ -242,6 +245,8 @@ Examples
 tw feed
 # Get an exact number (less than 100 plz)
 tw feed 42
+# Write to a file
+tw feed 42 --dump
 ```
 
 ### `version`
