@@ -11,6 +11,8 @@ use super::TwitterResponse;
 use super::TwitterUser;
 use serde_json::json;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::fs;
+use std::path::PathBuf;
 use urlencoding::encode;
 
 type ParameterList<'a> = &'a [(&'a str, String)];
@@ -136,6 +138,13 @@ impl<'c> Client<'c> {
 
         if res.status().is_success() {
             let text = res.text()?;
+            if self.args.flags.get("dump").is_some() {
+                let mut path = PathBuf::from(home::home_dir().expect("Cannot get your home directory!"));
+                path.push(format!("feed-{}.json", self.timestamp()));
+                fs::write(&path, &text)?;
+                path = fs::canonicalize(&path)?;
+                println!("Dumped data to {}", path.display());
+            }
             self.args.debug(&text);
             let json: TwitterFeed = serde_json::from_str(&text)?;
             Ok(json)
@@ -174,6 +183,13 @@ impl<'c> Client<'c> {
 
         if res.status().is_success() {
             let text = res.text()?;
+            if self.args.flags.get("dump").is_some() {
+                let mut path = PathBuf::from(home::home_dir().expect("Cannot get your home directory!"));
+                path.push(format!("me-{}.json", self.timestamp()));
+                fs::write(&path, &text)?;
+                path = fs::canonicalize(&path)?;
+                println!("Dumped data to {}", path.display());
+            }
             self.args.debug(&text);
             let json: TwitterResponse<TwitterUser> = serde_json::from_str(&text)?;
             Ok(json.data)
@@ -201,6 +217,13 @@ impl<'c> Client<'c> {
 
         if res.status().is_success() {
             let text = res.text()?;
+            if self.args.flags.get("dump").is_some() {
+                let mut path = PathBuf::from(home::home_dir().expect("Cannot get your home directory!"));
+                path.push(format!("home-{}.json", self.timestamp()));
+                fs::write(&path, &text)?;
+                path = fs::canonicalize(&path)?;
+                println!("Dumped data to {}", path.display());
+            }
             self.args.debug(&text);
             let json: TwitterResponse<Vec<TwitterHomeItem>> = serde_json::from_str(&text)?;
             Ok(json.data)

@@ -13,7 +13,7 @@ use std::str::FromStr;
 pub struct BaseArgs {
     named: HashMap<String, String>,
     pub positional: Vec<String>,
-    flags: HashMap<String, bool>,
+    pub flags: HashMap<String, bool>,
     is_debug: bool,
 }
 
