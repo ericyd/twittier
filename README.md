@@ -209,6 +209,10 @@ Arguments
 
 - `count` (Optional)
   - Must be between 5 and 100
+
+Options
+
+- `next-token` (Optional) next pagination token
 - `dump` (Optional) writes the raw JSON response to a file
 
 Examples

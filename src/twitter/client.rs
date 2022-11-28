@@ -203,11 +203,15 @@ impl<'c> Client<'c> {
         &self,
         user_id: &String,
         count: i32,
-    ) -> Result<Vec<TwitterHomeItem>, TwitterError> {
+        pagination_token: Option<String>
+    ) -> Result<TwitterResponse<Vec<TwitterHomeItem>>, TwitterError> {
         self.args
             .debug(&format!("Fetching home with count: {}", count));
 
-        let base_url = format!("https://api.twitter.com/2/users/{}/tweets?max_results={}&tweet.fields=created_at,author_id,public_metrics", user_id, count);
+        let mut base_url = format!("https://api.twitter.com/2/users/{}/tweets?max_results={}&tweet.fields=created_at,author_id,public_metrics", user_id, count);
+        if pagination_token.is_some() {
+            base_url = format!("{}&pagination_token={}", base_url, pagination_token.unwrap());
+        }
 
         let req = self.client.get(&base_url).bearer_auth(self.bearer_token()?);
         self.args.debug(&req);
@@ -226,7 +230,7 @@ impl<'c> Client<'c> {
             }
             self.args.debug(&text);
             let json: TwitterResponse<Vec<TwitterHomeItem>> = serde_json::from_str(&text)?;
-            Ok(json.data)
+            Ok(json)
         } else {
             Err(self.error(res))
         }

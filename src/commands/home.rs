@@ -11,6 +11,10 @@ Arguments
         integer between 5 and 100.
 
 Options:
+    -t, --next-token <token>
+        A continuation token when paginating results
+    --dump
+        Write raw JSON result to a file
     -p, --profile <name>
         The name of the profile to use.
         Must correspond to an entry in your credentials file (~/.twitter_credentials.toml by default).
@@ -31,6 +35,7 @@ Examples:
 
 struct Args {
     count: i32,
+    next_token: Option<String>
 }
 
 fn parse(args: &BaseArgs) -> Args {
@@ -38,7 +43,8 @@ fn parse(args: &BaseArgs) -> Args {
         Some(count) => count.parse::<i32>().unwrap(),
         None => 10,
     };
-    Args { count }
+    let next_token = args.get_option("next-token", "t");
+    Args { count, next_token }
 }
 
 fn help() -> Result<(), TwitterError> {
@@ -60,10 +66,18 @@ pub fn execute(base_args: &BaseArgs) -> Result<(), TwitterError> {
     base_args.debug(&credentials);
 
     let me = twitter::Client::new(&credentials, base_args).me()?;
-    let home = twitter::Client::new(&credentials, base_args).home_v2(&me.id, args.count)?;
+    let home = twitter::Client::new(&credentials, base_args).home_v2(&me.id, args.count, args.next_token)?;
 
-    for item in home {
+    for item in home.data {
         item.display();
+    }
+
+    match home.meta {
+        Some(meta) => match meta.next_token {
+            Some(token) => println!("Next page token: {}", token),
+            None => ()
+        },
+        None => ()
     }
 
     Ok(())

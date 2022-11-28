@@ -12,8 +12,17 @@ pub struct TwitterDeleteResponseData {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct TwitterResponseMeta {
+    pub next_token: Option<String>,
+    // pub result_count: i32,
+    // pub newest_id: String,
+    // pub oldest_id: String,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct TwitterResponse<T> {
     pub data: T,
+    pub meta: Option<TwitterResponseMeta>
 }
 
 #[derive(Deserialize, Debug)]
